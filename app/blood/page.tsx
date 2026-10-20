@@ -1,0 +1,82 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import SetupNotice from "@/components/SetupNotice";
+import { browserClient, isConfigured } from "@/lib/supabase";
+import { BLOOD_GROUPS, errorMessage, fmtDate } from "@/lib/bn";
+
+type Donor = {
+  name: string;
+  blood_group: string;
+  address: string | null;
+  phone: string;
+  last_blood_donation: string | null;
+  available: boolean;
+};
+
+export default function BloodPage() {
+  const [group, setGroup] = useState("");
+  const [donors, setDonors] = useState<Donor[] | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    let cancelled = false;
+    setDonors(null);
+    browserClient()
+      .rpc("get_blood_donors", { p_group: group || null })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) setError(errorMessage(error));
+        else setDonors((data as Donor[]) ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [group]);
+
+  if (!isConfigured) return <SetupNotice />;
+
+  return (
+    <div>
+      <h1 className="mb-1 text-3xl">রক্তদাতা তালিকা</h1>
+      <p className="mb-5 text-muted">
+        রক্তের প্রয়োজনে গ্রুপ বেছে নিন। শেষ রক্তদানের ৪ মাস পার হলে দাতাকে &ldquo;প্রস্তুত&rdquo; দেখানো হয়।
+      </p>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button onClick={() => setGroup("")} className={`btn btn-sm ${group === "" ? "btn-primary" : "btn-ghost"}`}>সব গ্রুপ</button>
+        {BLOOD_GROUPS.map((g) => (
+          <button key={g} onClick={() => setGroup(g)} className={`btn btn-sm ${group === g ? "btn-primary" : "btn-ghost"}`}>{g}</button>
+        ))}
+      </div>
+
+      {error && <p className="mb-4 text-blood">{error}</p>}
+      {donors === null && !error && <p className="text-muted">লোড হচ্ছে…</p>}
+      {donors?.length === 0 && <p className="text-muted">এই গ্রুপের কোনো দাতা এখনো তালিকায় নেই।</p>}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {donors?.map((d) => (
+          <div key={d.phone} className="card flex items-center gap-4">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blood/10 font-display text-xl font-bold text-blood">
+              {d.blood_group}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">{d.name}</p>
+              {d.address && <p className="truncate text-sm text-muted">{d.address}</p>}
+              <p className="text-sm">
+                {d.available ? (
+                  <span className="badge bg-brand-soft text-brand-dark">প্রস্তুত</span>
+                ) : (
+                  <span className="badge bg-accent-soft text-[#8a5a00]">সম্প্রতি রক্ত দিয়েছেন</span>
+                )}
+                {d.last_blood_donation && <span className="ml-2 text-muted">শেষ: {fmtDate(d.last_blood_donation)}</span>}
+              </p>
+            </div>
+            <a href={`tel:${d.phone}`} className="btn btn-primary btn-sm shrink-0">কল</a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
