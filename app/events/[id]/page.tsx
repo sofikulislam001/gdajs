@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EventImage from "@/components/EventImage";
 import ShareButtons from "@/components/ShareButtons";
 import SetupNotice from "@/components/SetupNotice";
 import { isConfigured, serverClient } from "@/lib/supabase";
 import { siteOrigin } from "@/lib/origin";
 import { fmtDate } from "@/lib/bn";
+import { categoryLabel } from "@/lib/categories";
 import type { EventRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -36,26 +38,28 @@ export default async function EventPage({ params }: Props) {
   const e = await getEvent(id);
   if (!e) notFound();
   const url = `${await siteOrigin()}/events/${e.id}`;
+  const isNotice = e.kind === "notice";
 
   return (
     <article className="mx-auto max-w-2xl">
       <Link href="/events" className="text-sm font-semibold text-brand hover:underline">← সব কার্যক্রম</Link>
-      <div className="mt-4 flex items-center gap-2">
-        <span className={`badge ${e.kind === "notice" ? "bg-accent-soft text-[#8a5a00]" : "bg-brand-soft text-brand-dark"}`}>
-          {e.kind === "notice" ? "নোটিশ" : "কার্যক্রম"}
-        </span>
-        <span className="text-sm text-muted">{fmtDate(e.event_date)}</span>
-      </div>
-      <h1 className="mt-2 text-3xl">{e.title}</h1>
-      {e.location && <p className="mt-1 text-muted">স্থান: {e.location}</p>}
-      {e.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.image_url} alt={e.title} className="mt-5 w-full rounded-2xl border border-line object-cover" />
-      )}
-      {e.description && <p className="mt-5 whitespace-pre-line text-lg">{e.description}</p>}
-      <div className="mt-8 border-t border-line pt-5">
-        <p className="mb-2 text-sm font-semibold text-muted">অন্যদের জানান</p>
-        <ShareButtons url={url} text={e.title} />
+      <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-white shadow-[0_4px_16px_rgba(40,80,120,0.08)]">
+        <EventImage src={e.image_url} category={e.category} alt={e.title} />
+        <div className="p-5">
+          <div className="flex items-center gap-2">
+            <span className={`badge ${isNotice ? "bg-accent text-ink" : "bg-brand-soft text-brand-dark"}`}>
+              {isNotice ? "নোটিশ" : categoryLabel(e.category)}
+            </span>
+            <span className="text-sm text-muted">{fmtDate(e.event_date)}</span>
+          </div>
+          <h1 className="mt-2 text-3xl">{e.title}</h1>
+          {e.location && <p className="mt-1 text-muted">স্থান: {e.location}</p>}
+          {e.description && <p className="mt-4 whitespace-pre-line text-lg">{e.description}</p>}
+          <div className="mt-6 border-t border-line pt-4">
+            <p className="mb-2 text-sm font-semibold text-muted">অন্যদের জানান</p>
+            <ShareButtons url={url} text={e.title} />
+          </div>
+        </div>
       </div>
     </article>
   );

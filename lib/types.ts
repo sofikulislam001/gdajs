@@ -1,6 +1,7 @@
 export type EventRow = {
   id: string;
   kind: "event" | "notice";
+  category: string;
   title: string;
   description: string | null;
   event_date: string;
@@ -56,4 +57,14 @@ export type PublicStats = {
   events: number;
   income: number;
   expense: number;
+};
+
+export type FbPost = {
+  id: string;
+  url: string;
+  title: string | null;
+  preview: string | null;
+  image_url: string | null;
+  posted_on: string;
+  published: boolean;
 };

@@ -12,6 +12,7 @@ const tabs = [
   { href: "/admin/chada", label: "মাসিক চাঁদা" },
   { href: "/admin/khoroch", label: "খরচ ও অনুদান" },
   { href: "/admin/events", label: "কার্যক্রম/নোটিশ" },
+  { href: "/admin/posts", label: "ফেসবুক পোস্ট" },
 ];
 
 type State = "loading" | "out" | "not-admin" | "ok";

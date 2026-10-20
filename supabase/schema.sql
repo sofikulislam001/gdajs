@@ -102,6 +102,7 @@ create policy "admin write expenses" on public.expenses
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
   kind text not null default 'event' check (kind in ('event','notice')),
+  category text not null default 'other' check (category in ('blood','relief','education','youth','health','other')),
   title text not null,
   description text,
   event_date date not null default current_date,
@@ -215,6 +216,40 @@ grant execute on function public.get_blood_donors(text) to anon, authenticated;
 grant execute on function public.get_monthly_income() to anon, authenticated;
 grant execute on function public.check_dues(text) to anon, authenticated;
 grant execute on function public.is_admin() to authenticated;
+
+-- ───────────── ফেসবুক পোস্ট কার্ড ─────────────
+create table if not exists public.fb_posts (
+  id uuid primary key default gen_random_uuid(),
+  url text not null,
+  title text,
+  preview text,
+  image_url text,
+  posted_on date not null default current_date,
+  published boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.fb_posts enable row level security;
+
+drop policy if exists "public read fb posts" on public.fb_posts;
+create policy "public read fb posts" on public.fb_posts
+  for select to anon, authenticated using (published = true or public.is_admin());
+
+drop policy if exists "admin write fb posts" on public.fb_posts;
+create policy "admin write fb posts" on public.fb_posts
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- ───────────── ছবি রাখার জায়গা (Storage) ─────────────
+insert into storage.buckets (id, name, public) values ('media', 'media', true) on conflict (id) do nothing;
+
+drop policy if exists "admin upload media" on storage.objects;
+create policy "admin upload media" on storage.objects
+  for insert to authenticated with check (bucket_id = 'media' and public.is_admin());
+drop policy if exists "admin update media" on storage.objects;
+create policy "admin update media" on storage.objects
+  for update to authenticated using (bucket_id = 'media' and public.is_admin());
+drop policy if exists "admin delete media" on storage.objects;
+create policy "admin delete media" on storage.objects
+  for delete to authenticated using (bucket_id = 'media' and public.is_admin());
 
 -- ───────────── প্রথম অ্যাডমিন বানানো ─────────────
 -- ১) Supabase > Authentication > Users থেকে একটি ইউজার (ইমেইল + পাসওয়ার্ড) তৈরি করুন।

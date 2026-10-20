@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-brand: #0f5c4d;
-  --color-brand-dark: #0a4439;
-  --color-brand-soft: #e3f1ec;
-  --color-accent: #f2a516;
+  --color-sky: #5a9fd0;
+  --color-sky-soft: #e8f2fa;
+  --color-brand: #3f86bd;
+  --color-brand-dark: #2c6a9b;
+  --color-brand-soft: #e3effa;
+  --color-accent: #f4a623;
   --color-accent-soft: #fdf1d6;
-  --color-paper: #fbf8f1;
-  --color-ink: #1d2a26;
-  --color-muted: #5e6b66;
-  --color-line: #e6dfd0;
-  --color-blood: #c0392b;
+  --color-paper: #f3f7fb;
+  --color-ink: #1f2d3a;
+  --color-muted: #62707d;
+  --color-line: #e1e8ef;
+  --color-blood: #d63a30;
   --font-sans: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
-  --font-display: "Noto Serif Bengali", "Hind Siliguri", serif;
+  --font-display: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
 }
 
 html {
@@ -25,7 +27,7 @@ html {
 body {
   min-height: 100vh;
   font-size: 17px;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
 h1, h2, h3 {
@@ -34,21 +36,26 @@ h1, h2, h3 {
   font-weight: 700;
 }
 
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold transition
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 font-semibold transition
       active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary { @apply bg-brand text-white hover:bg-brand-dark; }
   .btn-accent { @apply bg-accent text-ink hover:brightness-95; }
   .btn-ghost { @apply border border-line bg-white text-ink hover:bg-brand-soft; }
   .btn-danger { @apply border border-blood/30 bg-white text-blood hover:bg-blood/10; }
-  .btn-sm { @apply rounded-lg px-3 py-1.5 text-sm; }
+  .btn-sm { @apply rounded-xl px-3 py-1.5 text-sm; }
 
-  .card { @apply rounded-2xl border border-line bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.02)]; }
+  .card {
+    @apply rounded-3xl border border-line bg-white p-5 shadow-[0_4px_16px_rgba(40,80,120,0.07)];
+  }
   .label { @apply mb-1 block text-sm font-semibold text-muted; }
   .input {
-    @apply w-full rounded-xl border border-line bg-white px-4 py-2.5 text-ink outline-none
+    @apply w-full rounded-2xl border border-line bg-white px-4 py-2.5 text-ink outline-none
       focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
