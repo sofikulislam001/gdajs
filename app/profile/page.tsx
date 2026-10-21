@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import ImageUpload from "@/components/ImageUpload";
+import Logo from "@/components/Logo";
+import { COVER_SRC } from "@/lib/brand";
 import SetupNotice from "@/components/SetupNotice";
 import { useAuth } from "@/lib/auth";
 import { browserClient, isConfigured } from "@/lib/supabase";
@@ -34,6 +36,7 @@ function ProfileInner() {
   const [saving, setSaving] = useState(false);
   const [pw, setPw] = useState("");
   const [PAY_NOTE, setPayNote] = useState("");
+  const [tab, setTab] = useState<"info" | "chada" | "security">("info");
 
   const load = useCallback(async () => {
     const sb = browserClient();
@@ -150,19 +153,51 @@ function ProfileInner() {
         </div>
       )}
 
-      <section className="card flex flex-col items-center gap-3 text-center">
-        <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
-        <div>
-          <h1 className="text-2xl">{m.name}</h1>
-          <p className="text-muted">{bn(m.phone)}</p>
-          <span className={`badge mt-1 ${statusBadge.c}`}>{statusBadge.t}</span>
+      <section className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_6px_24px_rgba(40,80,120,0.1)]">
+        <div className="relative h-32 sm:h-40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/70 to-transparent" />
         </div>
-        {m.status === "pending" && <p className="text-sm text-muted">আপনার আবেদন যাচাইয়ের অপেক্ষায় আছে। অনুমোদন হলে এখানে চাঁদার হিসাব দেখা যাবে।</p>}
+        <div className="-mt-14 flex flex-col items-center gap-2 px-4 pb-5 text-center">
+          <div className="rounded-full bg-white p-1 shadow-lg">
+            <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
+          </div>
+          <h1 className="text-2xl">{m.name}</h1>
+          <p className="text-muted">{bn(m.phone)}{m.profession ? ` • ${m.profession}` : ""}</p>
+          <span className={`badge ${statusBadge.c}`}>{statusBadge.t}</span>
+          {m.status === "pending" && <p className="text-sm text-muted">আপনার আবেদন যাচাইয়ের অপেক্ষায় আছে। অনুমোদন হলে এখানে চাঁদার হিসাব দেখা যাবে।</p>}
+        </div>
       </section>
+
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#12324f] via-[#1f5a8a] to-[#3f86bd] p-5 text-white shadow-[0_10px_28px_rgba(18,50,79,0.35)]">
+        <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-white/10" />
+        <div className="relative flex items-center gap-3">
+          <span className="rounded-full bg-white p-0.5"><Logo size={44} /></span>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-widest text-white/70">সদস্য পরিচয়পত্র</p>
+            <p className="truncate font-bold leading-tight">গোদনাইল আলোকিত যুব শক্তি</p>
+          </div>
+        </div>
+        <p className="relative mt-4 text-xl font-bold">{m.name}</p>
+        <div className="relative mt-3 grid grid-cols-3 gap-2 text-sm">
+          <div><p className="text-white/60">যোগদান</p><p className="font-semibold">{fmtDate(m.joined_on)}</p></div>
+          <div><p className="text-white/60">রক্তের গ্রুপ</p><p className="font-semibold">{m.blood_group || "—"}</p></div>
+          <div><p className="text-white/60">অবস্থা</p><p className="font-semibold">{statusBadge.t}</p></div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-3 gap-1 rounded-2xl bg-white p-1 shadow-sm ring-1 ring-line">
+        {([["info", "আমার তথ্য"], ["chada", "চাঁদার হিসাব"], ["security", "নিরাপত্তা"]] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setTab(k)} className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === k ? "bg-brand text-white shadow" : "text-muted hover:bg-brand-soft"}`}>{l}</button>
+        ))}
+      </div>
 
       {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 text-center font-medium">{msg}</p>}
 
-      {m.status === "active" && (
+      {tab === "chada" && m.status !== "active" && <p className="card text-center text-muted">সদস্যপদ অনুমোদনের পর চাঁদার হিসাব দেখা যাবে।</p>}
+
+      {tab === "chada" && m.status === "active" && (
         <section className="card space-y-4">
           <h2 className="text-xl">আমার চাঁদার হিসাব</h2>
           <p className="text-muted">মাসিক চাঁদা: <b className="text-ink">{taka(m.monthly_fee)}</b> • যোগদান: {fmtDate(m.joined_on)}</p>
@@ -193,7 +228,7 @@ function ProfileInner() {
         </section>
       )}
 
-      <form onSubmit={save} className="card space-y-4">
+      {tab === "info" && <form onSubmit={save} className="card space-y-4">
         <h2 className="text-xl">আমার তথ্য</h2>
         <div>
           <label className="label" htmlFor="name">নাম</label>
@@ -223,8 +258,9 @@ function ProfileInner() {
         </label>
         <div><label className="label" htmlFor="about">আমার সম্পর্কে (ঐচ্ছিক)</label><textarea id="about" name="about" rows={3} defaultValue={m.about ?? ""} className="input" /></div>
         <button disabled={saving} className="btn btn-primary w-full py-3 text-lg">{saving ? "সংরক্ষণ হচ্ছে…" : "তথ্য সংরক্ষণ করুন"}</button>
-      </form>
+      </form>}
 
+      {tab === "security" && <>
       <form onSubmit={changePassword} className="card space-y-3">
         <h2 className="text-xl">পাসওয়ার্ড বদলান</h2>
         <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)" autoComplete="new-password" className="input" />
@@ -232,6 +268,7 @@ function ProfileInner() {
       </form>
 
       <button onClick={logout} className="btn btn-danger w-full py-3">লগআউট</button>
+      </>}
     </div>
   );
 }

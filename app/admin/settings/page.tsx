@@ -13,6 +13,15 @@ const FIELDS: { key: keyof SiteSettings; label: string; hint: string; placeholde
   { key: "fb_page_url", label: "ফেসবুক পেজের লিংক", hint: "সাইটের মেনু ও বোতামে ব্যবহার হবে।", placeholder: "https://www.facebook.com/gajs" },
 ];
 
+const DEV_FIELDS: { key: keyof SiteSettings; label: string; placeholder: string }[] = [
+  { key: "dev_name", label: "নাম", placeholder: "MD SOFIKUL ISLAM" },
+  { key: "dev_profession", label: "পেশা / পরিচয়", placeholder: "Web Developer" },
+  { key: "dev_portfolio", label: "পোর্টফোলিও সাইটের লিংক", placeholder: "https://..." },
+  { key: "dev_facebook", label: "ফেসবুক প্রোফাইল লিংক", placeholder: "https://www.facebook.com/..." },
+  { key: "dev_github", label: "GitHub লিংক", placeholder: "https://github.com/..." },
+  { key: "dev_whatsapp", label: "হোয়াটসঅ্যাপ নম্বর", placeholder: "01XXXXXXXXX" },
+];
+
 export default function SettingsAdmin() {
   const [vals, setVals] = useState<SiteSettings | null>(null);
   const [msg, setMsg] = useState("");
@@ -58,6 +67,18 @@ export default function SettingsAdmin() {
           )}
         </div>
       ))}
+      <div className="card space-y-3">
+        <div>
+          <h2 className="text-lg font-bold">ডেভেলপারের তথ্য</h2>
+          <p className="text-sm text-muted">লগইন পাতায় &ldquo;ডেভেলপার&rdquo; কার্ডে দেখাবে। ফাঁকা ঘরের বোতাম দেখাবে না।</p>
+        </div>
+        {DEV_FIELDS.map((f) => (
+          <div key={f.key}>
+            <label className="label" htmlFor={f.key}>{f.label}</label>
+            <input id={f.key} value={vals[f.key]} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })} placeholder={f.placeholder} className="input" />
+          </div>
+        ))}
+      </div>
       {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 font-medium">{msg}</p>}
       <button disabled={busy} className="btn btn-primary w-full py-3 text-lg">{busy ? "সংরক্ষণ হচ্ছে…" : "সংরক্ষণ করুন"}</button>
     </form>

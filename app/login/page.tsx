@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import DeveloperCard from "@/components/DeveloperCard";
 import Logo from "@/components/Logo";
 import SetupNotice from "@/components/SetupNotice";
 import { loginIdToEmail } from "@/lib/auth";
@@ -64,6 +65,7 @@ export default function LoginPage() {
         </p>
         <p className="mt-2 text-sm text-muted">পাসওয়ার্ড ভুলে গেলে সংগঠনের অ্যাডমিনকে জানান, তিনি নতুন পাসওয়ার্ড দিয়ে দেবেন।</p>
       </div>
+      <DeveloperCard />
     </div>
   );
 }
