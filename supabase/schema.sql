@@ -261,3 +261,55 @@ create table if not exists public.site_settings (key text primary key, value tex
 alter table public.site_settings enable row level security;
 create policy "settings read" on public.site_settings for select using (true);
 create policy "settings admin write" on public.site_settings for all using (public.is_admin()) with check (public.is_admin());
+
+-- ── সদস্য অ্যাকাউন্ট ও প্রোফাইল (পরবর্তী মাইগ্রেশনের সারাংশ) ──
+alter table public.members
+  add column if not exists user_id uuid references auth.users(id) on delete set null,
+  add column if not exists photo_url text,
+  add column if not exists father_name text,
+  add column if not exists dob date,
+  add column if not exists education text,
+  add column if not exists email text,
+  add column if not exists about text,
+  add column if not exists is_demo boolean not null default false;
+
+create policy "member reads own" on public.members for select to authenticated using (user_id = auth.uid());
+create policy "member updates own" on public.members for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "member reads own payments" on public.payments for select to authenticated
+  using (member_id in (select m.id from public.members m where m.user_id = auth.uid()));
+
+-- সদস্য নিজে স্ট্যাটাস/চাঁদা/ফোন বদলাতে পারবে না
+create or replace function public.members_guard() returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    new.status := old.status; new.monthly_fee := old.monthly_fee; new.user_id := old.user_id;
+    new.joined_on := old.joined_on; new.phone := old.phone; new.is_demo := old.is_demo;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists members_guard_trg on public.members;
+create trigger members_guard_trg before update on public.members for each row execute function public.members_guard();
+
+-- নিবন্ধন শুধু Edge Function (supabase/functions/member-api) দিয়ে
+drop policy if exists "anyone can apply" on public.members;
+create policy "anyone can apply" on public.members for insert to anon, authenticated with check (false);
+
+-- রক্তদাতা তালিকা (ছবিসহ)
+create or replace function public.get_donors_v2(p_group text default null)
+returns table(name text, blood_group text, address text, phone text, last_blood_donation date, available boolean, photo_url text)
+language sql stable security definer set search_path = '' as $$
+  select m.name, m.blood_group, m.address, m.phone, m.last_blood_donation,
+         (m.last_blood_donation is null or m.last_blood_donation <= current_date - 120) as available, m.photo_url
+  from public.members m
+  where m.status = 'active' and m.show_in_blood_list and m.blood_group is not null
+    and (p_group is null or p_group = '' or m.blood_group = p_group)
+  order by available desc, m.name;
+$$;
+
+-- স্টোরেজ: সদস্য শুধু নিজের avatars/<uid>/ ফোল্ডারে ছবি দিতে পারে
+create policy "member upload own avatar" on storage.objects for insert to authenticated
+  with check (bucket_id = 'media' and (storage.foldername(name))[1] = 'avatars' and (storage.foldername(name))[2] = auth.uid()::text);
+create policy "member update own avatar" on storage.objects for update to authenticated
+  using (bucket_id = 'media' and (storage.foldername(name))[1] = 'avatars' and (storage.foldername(name))[2] = auth.uid()::text);
+create policy "member delete own avatar" on storage.objects for delete to authenticated
+  using (bucket_id = 'media' and (storage.foldername(name))[1] = 'avatars' and (storage.foldername(name))[2] = auth.uid()::text);
