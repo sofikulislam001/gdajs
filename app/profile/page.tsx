@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -11,7 +12,6 @@ import { BLOOD_GROUPS, bn, currentMonthKey, errorMessage, fmtDate, fmtMonth, mon
 import { dueFor } from "@/lib/dues";
 import type { Member, Payment } from "@/lib/types";
 
-const PAY_NOTE = process.env.NEXT_PUBLIC_PAYMENT_NOTE;
 
 function lastMonths(n: number): string[] {
   const out: string[] = [];
@@ -33,6 +33,7 @@ function ProfileInner() {
   const [msg, setMsg] = useState("");
   const [saving, setSaving] = useState(false);
   const [pw, setPw] = useState("");
+  const [PAY_NOTE, setPayNote] = useState("");
 
   const load = useCallback(async () => {
     const sb = browserClient();
@@ -45,11 +46,15 @@ function ProfileInner() {
   }, []);
 
   useEffect(() => {
+    browserClient().from("site_settings").select("value").eq("key", "payment_note").maybeSingle().then(({ data }) => setPayNote((data?.value as string) ?? ""));
+  }, []);
+
+  useEffect(() => {
     if (user) void load();
   }, [user, load]);
 
   if (!isConfigured) return <SetupNotice />;
-  if (!ready) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (!ready) return <ListSkeleton />;
 
   if (!user) {
     return (
@@ -64,7 +69,7 @@ function ProfileInner() {
     );
   }
 
-  if (member === undefined) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (member === undefined) return <ListSkeleton />;
 
   if (member === null) {
     return (
@@ -233,7 +238,7 @@ function ProfileInner() {
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<p className="text-muted">লোড হচ্ছে…</p>}>
+    <Suspense fallback={<ListSkeleton />}>
       <ProfileInner />
     </Suspense>
   );

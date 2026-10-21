@@ -5,7 +5,7 @@ import { isConfigured, serverClient } from "@/lib/supabase";
 import { FB_PAGE_URL } from "@/lib/brand";
 import type { FbPost } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 export const metadata: Metadata = { title: "ফেসবুক পোস্ট" };
 
 export default async function PostsPage() {

@@ -255,3 +255,9 @@ create policy "admin delete media" on storage.objects
 -- ১) Supabase > Authentication > Users থেকে একটি ইউজার (ইমেইল + পাসওয়ার্ড) তৈরি করুন।
 -- ২) নিচের লাইনে ইমেইল বদলে আলাদা করে Run করুন:
 --    insert into public.admins (user_id) select id from auth.users where email = 'আপনার-ইমেইল@example.com';
+
+-- সাইট সেটিংস (অ্যাডমিন প্যানেল থেকে বদলানো যায়)
+create table if not exists public.site_settings (key text primary key, value text not null default '', updated_at timestamptz not null default now());
+alter table public.site_settings enable row level security;
+create policy "settings read" on public.site_settings for select using (true);
+create policy "settings admin write" on public.site_settings for all using (public.is_admin()) with check (public.is_admin());

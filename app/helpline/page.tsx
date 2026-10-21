@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { HelplineIcon } from "@/components/Icons";
 import { bn } from "@/lib/bn";
+import { getSettings } from "@/lib/settings";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = { title: "হেল্পলাইন" };
 
@@ -11,8 +14,8 @@ const lines = [
   { number: "333", name: "সরকারি তথ্য ও সেবা", note: "যেকোনো সরকারি সেবা সংক্রান্ত তথ্য" },
 ];
 
-export default function HelplinePage() {
-  const contact = process.env.NEXT_PUBLIC_CONTACT_PHONE;
+export default async function HelplinePage() {
+  const contact = (await getSettings()).contact_phone;
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-3xl">হেল্পলাইন</h1>

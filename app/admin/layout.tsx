@@ -14,6 +14,7 @@ const tabs = [
   { href: "/admin/khoroch", label: "খরচ/অনুদান" },
   { href: "/admin/events", label: "কার্যক্রম" },
   { href: "/admin/posts", label: "ফেসবুক পোস্ট" },
+  { href: "/admin/settings", label: "সেটিংস" },
 ];
 
 type State = "loading" | "out" | "not-admin" | "ok";
@@ -94,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="container-x py-5">
-      <div className="mb-6 rounded-3xl border border-line bg-white p-2 shadow-[0_4px_16px_rgba(40,80,120,0.07)]">
+      <div className="sticky top-[4.25rem] z-20 mb-6 rounded-3xl border border-line bg-white/95 p-2 backdrop-blur shadow-[0_4px_16px_rgba(40,80,120,0.07)]">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {tabs.map((t) => {
             const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);

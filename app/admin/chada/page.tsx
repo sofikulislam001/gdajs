@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { bn, currentMonthKey, errorMessage, fmtMonth, monthStart, taka, waLink } from "@/lib/bn";
@@ -84,7 +85,7 @@ export default function ChadaAdmin() {
     }
   }
 
-  if (!members) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (!members) return <ListSkeleton />;
   const list = tab === "unpaid" ? unpaid : paid;
 
   return (

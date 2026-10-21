@@ -10,7 +10,7 @@ import { fmtDate } from "@/lib/bn";
 import { categoryLabel } from "@/lib/categories";
 import type { EventRow } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 type Props = { params: Promise<{ id: string }> };
 

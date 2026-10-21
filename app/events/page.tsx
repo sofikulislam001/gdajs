@@ -5,7 +5,7 @@ import SetupNotice from "@/components/SetupNotice";
 import { isConfigured, serverClient } from "@/lib/supabase";
 import type { EventRow } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 export const metadata: Metadata = { title: "কার্যক্রম ও নোটিশ" };
 
 type Props = { searchParams: Promise<{ kind?: string }> };

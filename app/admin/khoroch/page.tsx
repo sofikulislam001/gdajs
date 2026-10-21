@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import { useCallback, useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { en, errorMessage, fmtDate, taka } from "@/lib/bn";
@@ -68,7 +69,7 @@ export default function KhorochAdmin() {
     await load();
   }
 
-  if (!expenses) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (!expenses) return <ListSkeleton />;
 
   return (
     <div className="space-y-4">

@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import { useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
 import SetupNotice from "@/components/SetupNotice";
@@ -54,7 +55,7 @@ export default function BloodPage() {
       </div>
 
       {error && <p className="mb-4 text-blood">{error}</p>}
-      {donors === null && !error && <p className="text-muted">লোড হচ্ছে…</p>}
+      {donors === null && !error && <ListSkeleton />}
       {donors?.length === 0 && <p className="text-muted">এই গ্রুপের কোনো দাতা এখনো তালিকায় নেই।</p>}
 
       <div className="grid gap-3 sm:grid-cols-2">

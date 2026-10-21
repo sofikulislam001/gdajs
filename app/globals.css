@@ -63,3 +63,17 @@ h1, h2, h3 {
   .th { @apply px-3 py-2 text-left text-sm font-semibold text-muted; }
   .td { @apply px-3 py-2.5 align-middle; }
 }
+
+/* স্মুথ অনুভূতি */
+html { scroll-behavior: smooth; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+main { animation: page-in 0.25s ease-out; }
+a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+input, select, textarea { font-size: 16px; }
+img { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  main { animation: none; }
+}
+.btn { min-height: 44px; }
+.btn-sm { min-height: 36px; }

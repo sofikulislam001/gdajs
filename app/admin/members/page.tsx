@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -105,7 +106,7 @@ function MembersInner() {
     await load();
   }
 
-  if (!members) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (!members) return <ListSkeleton />;
   const key = currentMonthKey();
 
   return (
@@ -190,7 +191,7 @@ function MembersInner() {
 
 export default function MembersAdmin() {
   return (
-    <Suspense fallback={<p className="text-muted">লোড হচ্ছে…</p>}>
+    <Suspense fallback={<ListSkeleton />}>
       <MembersInner />
     </Suspense>
   );

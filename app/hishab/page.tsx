@@ -4,7 +4,7 @@ import { isConfigured, serverClient } from "@/lib/supabase";
 import { fmtDate, fmtMonth, taka } from "@/lib/bn";
 import type { Expense, PublicStats } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 export const metadata: Metadata = { title: "স্বচ্ছ হিসাব" };
 
 export default async function HishabPage() {

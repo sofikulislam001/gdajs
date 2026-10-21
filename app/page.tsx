@@ -3,7 +3,9 @@ import SetupNotice from "@/components/SetupNotice";
 import EventCard from "@/components/EventCard";
 import FbPostCard from "@/components/FbPostCard";
 import MenuCard from "@/components/MenuCard";
+import Logo from "@/components/Logo";
 import Slider, { type Slide } from "@/components/Slider";
+import { COVER_SRC, ORG_ESTD, ORG_PLACE } from "@/lib/brand";
 import {
   BloodIcon, EventIcon, HelplineIcon, NoticeIcon, PeopleIcon, PostIcon, ReceiptIcon, WalletIcon,
 } from "@/components/Icons";
@@ -12,7 +14,7 @@ import { ORG_NAME, ORG_SLOGAN, bn } from "@/lib/bn";
 import { categoryLabel } from "@/lib/categories";
 import type { EventRow, FbPost, PublicStats } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 async function load() {
   if (!isConfigured) return null;
@@ -34,23 +36,38 @@ export default async function Home() {
   const s = data?.stats;
   const today = new Intl.DateTimeFormat("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" }).format(new Date());
 
-  const slides: Slide[] = [
-    { key: "cover", cover: true, title: ORG_NAME, sub: ORG_SLOGAN },
-    ...(data?.events ?? []).slice(0, 5).map((e) => ({
-      key: e.id,
-      href: `/events/${e.id}`,
-      title: e.title,
-      sub: e.kind === "notice" ? "নোটিশ" : categoryLabel(e.category),
-      image: e.image_url,
-      category: e.category,
-    })),
-  ];
+  const slides: Slide[] = (data?.events ?? []).slice(0, 5).map((e) => ({
+    key: e.id,
+    href: `/events/${e.id}`,
+    title: e.title,
+    sub: e.kind === "notice" ? "নোটিশ" : categoryLabel(e.category),
+    image: e.image_url,
+    category: e.category,
+  }));
 
   return (
     <div>
-      <section className="rounded-b-[2.5rem] bg-[#6aa8d8] pb-7 text-white shadow-[0_8px_24px_rgba(40,100,160,0.18)]">
-        <p className="pb-3 text-center text-2xl font-bold">{today}</p>
-        <Slider slides={slides} />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#6aa8d8] to-[#8fc0e6] pb-10 text-white">
+        <div className="container-x pt-5">
+          <div className="flex items-center gap-3">
+            <Logo size={56} />
+            <div className="min-w-0">
+              <p className="text-sm text-white/90">{today}</p>
+              <h1 className="text-2xl leading-tight drop-shadow sm:text-3xl">{ORG_NAME}</h1>
+            </div>
+          </div>
+          <p className="mt-2 max-w-xl text-white/95">{ORG_SLOGAN}</p>
+          <div className="mt-4 overflow-hidden rounded-3xl border-4 border-white shadow-[0_10px_30px_rgba(20,60,100,0.3)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={COVER_SRC ?? ""} alt={`${ORG_NAME} — পথচলার ৫ বছর`} className="aspect-[1080/578] w-full object-cover" />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/join" className="btn btn-accent px-6 text-lg">সদস্য হোন</Link>
+            <Link href="/blood" className="btn bg-white text-blood hover:bg-white/90">রক্ত খুঁজুন</Link>
+            <Link href="/about" className="btn border border-white/60 text-white hover:bg-white/15">আমাদের কথা</Link>
+          </div>
+          <p className="mt-3 text-sm text-white/90">স্থাপিত {ORG_ESTD} • {ORG_PLACE}</p>
+        </div>
       </section>
 
       <div className="container-x space-y-10 py-8">
@@ -62,7 +79,7 @@ export default async function Home() {
           <MenuCard href="/posts" label="ফেসবুক পোস্ট"><PostIcon size={64} /></MenuCard>
           <MenuCard href="/events?kind=notice" label="নোটিশ"><NoticeIcon size={64} /></MenuCard>
           <MenuCard href="/hishab" label="স্বচ্ছ হিসাব"><WalletIcon size={64} /></MenuCard>
-          <MenuCard href="/dues" label="আমার বকেয়া"><ReceiptIcon size={64} /></MenuCard>
+          <MenuCard href="/profile" label="আমার প্রোফাইল"><ReceiptIcon size={64} /></MenuCard>
           <MenuCard href="/join" label="সদস্য হোন"><PeopleIcon size={64} /></MenuCard>
           <MenuCard href="/helpline" label="হেল্পলাইন"><HelplineIcon size={64} /></MenuCard>
         </section>
@@ -92,6 +109,13 @@ export default async function Home() {
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
               {data.posts.map((p) => <FbPostCard key={p.id} post={p} />)}
             </div>
+          </section>
+        )}
+
+        {slides.length > 0 && (
+          <section className="-mx-4">
+            <h2 className="mb-3 px-4 text-2xl">সাম্প্রতিক কার্যক্রম</h2>
+            <Slider slides={slides} />
           </section>
         )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
     await load();
   }
 
-  if (!members) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (!members) return <ListSkeleton />;
 
   const key = currentMonthKey();
   const active = members.filter((m) => m.status === "active");
@@ -63,6 +64,7 @@ export default function AdminDashboard() {
     { href: "/admin/events", title: "নতুন কার্যক্রম/নোটিশ", sub: "ছবিসহ পোস্ট করুন" },
     { href: "/admin/khoroch", title: "খরচ/অনুদান", sub: "হিসাব যোগ করুন" },
     { href: "/admin/posts", title: "ফেসবুক পোস্ট", sub: "লিংক যোগ করুন" },
+    { href: "/admin/settings", title: "সেটিংস", sub: "ফোন, বিকাশ নম্বর ইত্যাদি" },
   ];
 
   return (

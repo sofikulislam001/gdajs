@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -47,7 +48,7 @@ export default function MemberDetail() {
     void load();
   }, [load]);
 
-  if (m === undefined) return <p className="text-muted">লোড হচ্ছে…</p>;
+  if (m === undefined) return <ListSkeleton />;
   if (m === null) {
     return (
       <div className="card">
