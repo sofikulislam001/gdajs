@@ -4,9 +4,10 @@ import { ListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { AIcon } from "@/components/AdminIcons";
 import Avatar from "@/components/Avatar";
 import { browserClient } from "@/lib/supabase";
-import { BLOOD_GROUPS, bn, currentMonthKey, en, errorMessage, isValidPhone, normalizePhone, taka } from "@/lib/bn";
+import { BLOOD_GROUPS, bn, currentMonthKey, en, errorMessage, fmtDate, isValidPhone, normalizePhone, taka, waLink } from "@/lib/bn";
 import { dueFor } from "@/lib/dues";
 import type { Member, Payment } from "@/lib/types";
 
@@ -24,6 +25,9 @@ function MembersInner() {
   const [msg, setMsg] = useState("");
   const [bulk, setBulk] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [sort, setSort] = useState<"name" | "new" | "due">("name");
+  const [bloodF, setBloodF] = useState("");
+  const [view, setView] = useState<"table" | "cards">("table");
 
   const load = useCallback(async () => {
     const sb = browserClient();
@@ -45,10 +49,30 @@ function MembersInner() {
 
   const shown = useMemo(() => {
     const needle = en(q.trim().toLowerCase());
-    return (members ?? [])
-      .filter((m) => m.status === filter && (!needle || m.name.toLowerCase().includes(needle) || m.phone.includes(needle) || (m.address ?? "").toLowerCase().includes(needle)))
-      .sort((a, b) => (filter === "pending" ? 0 : a.name.localeCompare(b.name, "bn")));
-  }, [members, filter, q]);
+    const key = currentMonthKey();
+    const list = (members ?? []).filter(
+      (m) =>
+        m.status === filter &&
+        (!bloodF || m.blood_group === bloodF) &&
+        (!needle || m.name.toLowerCase().includes(needle) || m.phone.includes(needle) || (m.address ?? "").toLowerCase().includes(needle)),
+    );
+    const dueAmt = (m: Member) => dueFor(m, payments, key).amount;
+    list.sort((a, b) => (sort === "new" ? b.created_at.localeCompare(a.created_at) : sort === "due" ? dueAmt(b) - dueAmt(a) : a.name.localeCompare(b.name, "bn")));
+    return list;
+  }, [members, filter, q, sort, bloodF, payments]);
+
+  function exportCsv() {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["নাম", "মোবাইল", "পিতার নাম", "জন্মতারিখ", "ঠিকানা", "পেশা", "শিক্ষা", "ইমেইল", "রক্তের গ্রুপ", "শেষ রক্তদান", "মাসিক চাঁদা", "স্ট্যাটাস", "যোগদান"];
+    const rows = shown.map((m) => [m.name, m.phone, m.father_name, m.dob, m.address, m.profession, m.education, m.email, m.blood_group, m.last_blood_donation, m.monthly_fee, m.status, m.joined_on]);
+    const csv = "\uFEFF" + [head, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `members-${filter}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function approve(m: Member) {
     const input = window.prompt(`${m.name}-এর মাসিক চাঁদা কত টাকা?`, String(m.monthly_fee));
@@ -111,58 +135,136 @@ function MembersInner() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        {(Object.keys(filterLabel) as Filter[]).map((k) => (
-          <button key={k} onClick={() => setFilter(k)} className={`btn btn-sm ${filter === k ? "btn-primary" : "btn-ghost"}`}>
-            {filterLabel[k]} ({bn(counts[k])})
-          </button>
-        ))}
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম, নম্বর বা ঠিকানা খুঁজুন" className="input ml-auto w-full sm:max-w-64" />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl">সদস্য ব্যবস্থাপনা</h1>
+          <p className="text-muted">মোট {bn(members.length)} জন • সক্রিয় {bn(counts.active)} • আবেদন {bn(counts.pending)}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={exportCsv} className="btn btn-ghost"><AIcon name="download" size={18} /> Excel/CSV</button>
+          <button onClick={() => setShowAdd(true)} className="btn btn-primary"><AIcon name="plus" size={18} /> নতুন সদস্য</button>
+        </div>
+      </div>
+
+      <div className="card space-y-3 p-3">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          {(Object.keys(filterLabel) as Filter[]).map((k) => (
+            <button key={k} onClick={() => setFilter(k)} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${filter === k ? "bg-brand text-white" : "bg-paper text-ink hover:bg-brand-soft"}`}>
+              {filterLabel[k]} <span className={`ml-1 rounded-full px-2 text-xs ${filter === k ? "bg-white/25" : "bg-white"}`}>{bn(counts[k])}</span>
+            </button>
+          ))}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+          <div className="relative">
+            <AIcon name="search" size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম, নম্বর বা ঠিকানা খুঁজুন" className="input pl-10" />
+          </div>
+          <select value={bloodF} onChange={(e) => setBloodF(e.target.value)} className="input sm:w-36" aria-label="রক্তের গ্রুপ">
+            <option value="">সব গ্রুপ</option>
+            {BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}
+          </select>
+          <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="input sm:w-44" aria-label="সাজান">
+            <option value="name">নাম অনুযায়ী</option>
+            <option value="new">নতুন আগে</option>
+            <option value="due">বকেয়া বেশি আগে</option>
+          </select>
+          <div className="hidden gap-1 rounded-2xl bg-paper p-1 md:flex">
+            <button onClick={() => setView("table")} aria-label="টেবিল" className={`rounded-xl px-3 py-1.5 ${view === "table" ? "bg-white shadow" : ""}`}><AIcon name="list" size={18} /></button>
+            <button onClick={() => setView("cards")} aria-label="কার্ড" className={`rounded-xl px-3 py-1.5 ${view === "cards" ? "bg-white shadow" : ""}`}><AIcon name="grid" size={18} /></button>
+          </div>
+        </div>
       </div>
 
       {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 font-medium">{msg}</p>}
 
       {shown.length === 0 ? (
-        <p className="card text-muted">এখানে কেউ নেই।</p>
+        <p className="card text-center text-muted">এই তালিকায় কেউ নেই।</p>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {shown.map((m) => {
-            const due = dueFor(m, payments, key);
-            return (
-              <div key={m.id} className="card flex flex-col gap-3">
-                <Link href={`/admin/members/${m.id}`} className="flex items-center gap-3">
-                  <Avatar src={m.photo_url} name={m.name} size={56} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-lg font-bold leading-tight">{m.name}</p>
-                    <p className="text-sm text-muted">{bn(m.phone)}{m.blood_group ? ` • ${m.blood_group}` : ""}</p>
-                    <p className="truncate text-sm text-muted">{m.address ?? "ঠিকানা নেই"}</p>
-                  </div>
-                  <span className={`badge ${badge[m.status]}`}>{filterLabel[m.status]}</span>
-                </Link>
-                <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                  {m.status === "active" && (
-                    <span className={`text-sm font-semibold ${due.due > 0 ? "text-blood" : "text-brand"}`}>
-                      {due.due > 0 ? `বকেয়া ${taka(due.amount)} (${bn(due.due)} মাস)` : "বকেয়া নেই"}
+        <>
+          {view === "table" && (
+            <div className="card hidden overflow-hidden p-0 md:block">
+              <table className="w-full text-left">
+                <thead className="bg-paper text-sm text-muted">
+                  <tr>
+                    <th className="th">সদস্য</th>
+                    <th className="th">যোগাযোগ</th>
+                    <th className="th">রক্ত</th>
+                    <th className="th">{filter === "pending" ? "আবেদনের তারিখ" : "বকেয়া"}</th>
+                    <th className="th text-right">কাজ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {shown.map((m) => {
+                    const due = dueFor(m, payments, key);
+                    return (
+                      <tr key={m.id} className="hover:bg-brand-soft/40">
+                        <td className="td">
+                          <Link href={`/admin/members/${m.id}`} className="flex items-center gap-3">
+                            <Avatar src={m.photo_url} name={m.name} size={42} />
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold">{m.name}</span>
+                              <span className="block truncate text-xs text-muted">{m.address ?? "ঠিকানা নেই"}</span>
+                            </span>
+                          </Link>
+                        </td>
+                        <td className="td text-sm">{bn(m.phone)}{m.user_id && <span className="ml-2 badge bg-sky-soft text-brand-dark">লগইন</span>}</td>
+                        <td className="td">{m.blood_group ? <span className="badge bg-blood/10 text-blood">{m.blood_group}</span> : <span className="text-muted">—</span>}</td>
+                        <td className="td text-sm">
+                          {filter === "pending" ? fmtDate(m.created_at.slice(0, 10)) : m.status === "active" ? (due.due > 0 ? <span className="font-semibold text-blood">{taka(due.amount)} ({bn(due.due)} মাস)</span> : <span className="text-brand">নেই</span>) : "—"}
+                        </td>
+                        <td className="td">
+                          <div className="flex justify-end gap-1.5">
+                            {m.status === "pending" && <button onClick={() => approve(m)} className="btn btn-primary btn-sm">অনুমোদন</button>}
+                            <a href={`tel:${m.phone}`} className="btn btn-ghost btn-sm" aria-label="কল"><AIcon name="phone" size={16} /></a>
+                            <a href={waLink(m.phone, `আসসালামু আলাইকুম ${m.name}`)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" aria-label="হোয়াটসঅ্যাপ"><AIcon name="chat" size={16} /></a>
+                            <Link href={`/admin/members/${m.id}`} className="btn btn-ghost btn-sm">সব তথ্য</Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className={`grid gap-3 md:grid-cols-2 xl:grid-cols-3 ${view === "table" ? "md:hidden" : ""}`}>
+            {shown.map((m) => {
+              const due = dueFor(m, payments, key);
+              return (
+                <div key={m.id} className="card flex flex-col gap-3">
+                  <Link href={`/admin/members/${m.id}`} className="flex items-center gap-3">
+                    <Avatar src={m.photo_url} name={m.name} size={56} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-lg font-bold leading-tight">{m.name}</p>
+                      <p className="text-sm text-muted">{bn(m.phone)}{m.blood_group ? ` • ${m.blood_group}` : ""}</p>
+                      <p className="truncate text-sm text-muted">{m.address ?? "ঠিকানা নেই"}</p>
+                    </div>
+                    <span className={`badge ${badge[m.status]}`}>{filterLabel[m.status]}</span>
+                  </Link>
+                  <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                    {m.status === "active" && (
+                      <span className={`text-sm font-semibold ${due.due > 0 ? "text-blood" : "text-brand"}`}>
+                        {due.due > 0 ? `বকেয়া ${taka(due.amount)} (${bn(due.due)} মাস)` : "বকেয়া নেই"}
+                      </span>
+                    )}
+                    {m.status === "pending" && <button onClick={() => approve(m)} className="btn btn-primary btn-sm">অনুমোদন করুন</button>}
+                    <span className="ml-auto flex gap-1.5">
+                      <a href={`tel:${m.phone}`} className="btn btn-ghost btn-sm">কল</a>
+                      <Link href={`/admin/members/${m.id}`} className="btn btn-ghost btn-sm">সব তথ্য</Link>
                     </span>
-                  )}
-                  {m.status === "pending" && <button onClick={() => approve(m)} className="btn btn-primary btn-sm">অনুমোদন করুন</button>}
-                  <span className="ml-auto flex gap-1.5">
-                    {m.user_id && <span className="badge bg-sky-soft text-brand-dark">লগইন আছে</span>}
-                    <a href={`tel:${m.phone}`} className="btn btn-ghost btn-sm">কল</a>
-                    <Link href={`/admin/members/${m.id}`} className="btn btn-ghost btn-sm">সব তথ্য</Link>
-                  </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      <section className="card">
-        <button onClick={() => setShowAdd((v) => !v)} className="flex w-full items-center justify-between text-left">
+      <section className={`card ${showAdd ? "" : "hidden"}`}>
+        <div className="flex w-full items-center justify-between text-left">
           <span className="text-lg font-bold">নতুন সদস্য যোগ করুন (অ্যাডমিন নিজে)</span>
-          <span className="text-brand">{showAdd ? "বন্ধ" : "খুলুন"}</span>
-        </button>
+          <button onClick={() => setShowAdd(false)} className="text-brand">বন্ধ করুন</button>
+        </div>
         {showAdd && (
           <div className="mt-4 grid gap-6 lg:grid-cols-2">
             <form onSubmit={addOne} className="space-y-3">

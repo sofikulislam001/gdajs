@@ -73,6 +73,10 @@ export default function KhorochAdmin() {
 
   return (
     <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl">খরচ ও অনুদান</h1>
+        <p className="text-muted">এখানে যা যোগ করবেন তা &ldquo;স্বচ্ছ হিসাব&rdquo; পাতায় সবাই দেখতে পাবে।</p>
+      </div>
       {msg && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm">{msg}</p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">

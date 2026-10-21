@@ -165,7 +165,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── মূল অংশ ── */}
-      <main className={`flex-1 ${isHome ? "" : "container-x py-6"} ${isAdmin ? "pb-10" : "pb-28 md:pb-10"}`}>{children}</main>
+      <main className={`flex-1 ${isHome ? "" : isAdmin ? "mx-auto w-full max-w-7xl px-4 py-5" : "container-x py-6"} ${isAdmin ? "pb-10" : "pb-28 md:pb-10"}`}>{children}</main>
 
       <footer className="hidden border-t border-line bg-white py-6 text-center text-sm text-muted md:block">
         <p className="font-semibold text-ink">{ORG_NAME}</p>

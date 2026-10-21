@@ -1,5 +1,6 @@
 "use client";
 
+import Avatar from "@/components/Avatar";
 import { ListSkeleton } from "@/components/Skeleton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { browserClient } from "@/lib/supabase";
@@ -16,6 +17,7 @@ export default function ChadaAdmin() {
   const [method, setMethod] = useState("ক্যাশ");
   const [msg, setMsg] = useState("");
   const [tab, setTab] = useState<"unpaid" | "paid">("unpaid");
+  const [q, setQ] = useState("");
 
   const load = useCallback(async () => {
     const sb = browserClient();
@@ -86,11 +88,17 @@ export default function ChadaAdmin() {
   }
 
   if (!members) return <ListSkeleton />;
-  const list = tab === "unpaid" ? unpaid : paid;
+  const needle = q.trim().toLowerCase();
+  const list = (tab === "unpaid" ? unpaid : paid).filter((r) => !needle || r.m.name.toLowerCase().includes(needle) || r.m.phone.includes(needle));
+  const pct = expected ? Math.min(100, Math.round((collected / expected) * 100)) : 0;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-4">
+      <div>
+        <h1 className="text-2xl">চাঁদা আদায়</h1>
+        <p className="text-muted">মাস বেছে নিন, যিনি টাকা দিয়েছেন তার পাশে &ldquo;পেয়েছি&rdquo; চাপুন।</p>
+      </div>
+      <div className="card flex flex-wrap items-end gap-4">
         <div>
           <label className="label" htmlFor="month">মাস</label>
           <input id="month" type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="input" />
@@ -107,12 +115,19 @@ export default function ChadaAdmin() {
         </div>
       </div>
 
+      <div className="card p-4">
+        <div className="mb-2 flex items-center justify-between text-sm"><span className="font-semibold">{label}-এর অগ্রগতি</span><span className="font-bold text-brand">{bn(pct)}%</span></div>
+        <div className="h-3 overflow-hidden rounded-full bg-paper"><div className="h-full rounded-full bg-gradient-to-r from-sky to-brand transition-all" style={{ width: `${pct}%` }} /></div>
+        <p className="mt-2 text-sm text-muted">{bn(paid.length)} জন দিয়েছেন • {bn(unpaid.length)} জন বাকি</p>
+      </div>
+
       {msg && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm">{msg}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setTab("unpaid")} className={`btn btn-sm ${tab === "unpaid" ? "btn-primary" : "btn-ghost"}`}>বাকি ({bn(unpaid.length)})</button>
         <button onClick={() => setTab("paid")} className={`btn btn-sm ${tab === "paid" ? "btn-primary" : "btn-ghost"}`}>পরিশোধ ({bn(paid.length)})</button>
-        {tab === "unpaid" && unpaid.length > 0 && <button onClick={copyList} className="btn btn-accent btn-sm ml-auto">বকেয়া তালিকা কপি (গ্রুপে দেওয়ার জন্য)</button>}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম বা নম্বর খুঁজুন" className="input ml-auto w-full sm:w-56" />
+        {tab === "unpaid" && unpaid.length > 0 && <button onClick={copyList} className="btn btn-accent btn-sm">বকেয়া তালিকা কপি</button>}
       </div>
 
       <div className="card overflow-x-auto p-0">
@@ -124,7 +139,7 @@ export default function ChadaAdmin() {
             {list.length === 0 && <tr><td className="td text-muted" colSpan={4}>{tab === "unpaid" ? "সবাই পরিশোধ করেছেন 🎉" : "এখনো কেউ পরিশোধ করেননি"}</td></tr>}
             {list.map(({ m, paid: p, due }) => (
               <tr key={m.id}>
-                <td className="td"><p className="font-medium">{m.name}</p><p className="text-xs text-muted">{bn(m.phone)}</p></td>
+                <td className="td"><div className="flex items-center gap-3"><Avatar src={m.photo_url} name={m.name} size={38} /><div><p className="font-medium">{m.name}</p><p className="text-xs text-muted">{bn(m.phone)}</p></div></div></td>
                 <td className="td whitespace-nowrap">{taka(m.monthly_fee)}{p && <span className="ml-2 text-xs text-muted">{p.method}</span>}</td>
                 <td className="td whitespace-nowrap">{due.due > 0 ? <span className="font-semibold text-blood">{taka(due.amount)} <span className="text-xs font-normal">({bn(due.due)} মাস)</span></span> : <span className="text-brand">নেই</span>}</td>
                 <td className="td">

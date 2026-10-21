@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AIcon, type AdminIconName } from "@/components/AdminIcons";
+import Logo from "@/components/Logo";
 import SetupNotice from "@/components/SetupNotice";
 import { loginIdToEmail } from "@/lib/auth";
 import { browserClient, isConfigured } from "@/lib/supabase";
 
-const tabs = [
-  { href: "/admin", label: "হোম" },
-  { href: "/admin/members", label: "সদস্য" },
-  { href: "/admin/chada", label: "চাঁদা" },
-  { href: "/admin/khoroch", label: "খরচ/অনুদান" },
-  { href: "/admin/events", label: "কার্যক্রম" },
-  { href: "/admin/posts", label: "ফেসবুক পোস্ট" },
-  { href: "/admin/settings", label: "সেটিংস" },
+const tabs: { href: string; label: string; icon: AdminIconName }[] = [
+  { href: "/admin", label: "ড্যাশবোর্ড", icon: "dashboard" },
+  { href: "/admin/members", label: "সদস্য", icon: "users" },
+  { href: "/admin/chada", label: "চাঁদা আদায়", icon: "coins" },
+  { href: "/admin/khoroch", label: "খরচ ও অনুদান", icon: "receipt" },
+  { href: "/admin/events", label: "কার্যক্রম", icon: "calendar" },
+  { href: "/admin/posts", label: "ফেসবুক পোস্ট", icon: "facebook" },
+  { href: "/admin/settings", label: "সেটিংস", icon: "settings" },
 ];
 
 type State = "loading" | "out" | "not-admin" | "ok";
@@ -26,6 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const pathname = usePathname();
+  const [pending, setPending] = useState(0);
 
   async function check() {
     const sb = browserClient();
@@ -33,6 +36,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!data.session) return setState("out");
     const { data: ok } = await sb.rpc("is_admin");
     setState(ok === true ? "ok" : "not-admin");
+    if (ok === true) {
+      const { count } = await sb.from("members").select("id", { count: "exact", head: true }).eq("status", "pending");
+      setPending(count ?? 0);
+    }
   }
 
   useEffect(() => {
@@ -94,21 +101,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="container-x py-5">
-      <div className="sticky top-[4.25rem] z-20 mb-6 rounded-3xl border border-line bg-white/95 p-2 backdrop-blur shadow-[0_4px_16px_rgba(40,80,120,0.07)]">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {tabs.map((t) => {
-            const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
-            return (
-              <Link key={t.href} href={t.href} className={`whitespace-nowrap rounded-2xl px-4 py-2 font-semibold transition ${active ? "bg-brand text-white" : "text-muted hover:bg-brand-soft"}`}>
-                {t.label}
-              </Link>
-            );
-          })}
-          <button onClick={logout} className="ml-auto whitespace-nowrap rounded-2xl px-4 py-2 font-semibold text-blood hover:bg-blood/10">লগআউট</button>
+    <div className="lg:grid lg:grid-cols-[15.5rem_1fr] lg:gap-6">
+      {/* ডেস্কটপ সাইডবার */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-24 space-y-4">
+          <div className="card flex items-center gap-3 p-4">
+            <Logo size={44} />
+            <div className="min-w-0">
+              <p className="truncate font-bold leading-tight">অ্যাডমিন প্যানেল</p>
+              <p className="text-xs text-muted">ম্যানেজমেন্ট সিস্টেম</p>
+            </div>
+          </div>
+          <nav className="card space-y-1 p-2">
+            {tabs.map((t) => {
+              const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
+              return (
+                <Link key={t.href} href={t.href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold transition ${active ? "bg-brand text-white shadow" : "text-ink hover:bg-brand-soft"}`}>
+                  <AIcon name={t.icon} />
+                  <span className="flex-1">{t.label}</span>
+                  {t.href === "/admin/members" && pending > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white text-brand-dark" : "bg-blood text-white"}`}>{pending}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="card space-y-1 p-2">
+            <Link href="/" target="_blank" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold text-muted hover:bg-brand-soft"><AIcon name="external" /> সাইট দেখুন</Link>
+            <button onClick={logout} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold text-blood hover:bg-blood/10"><AIcon name="logout" /> লগআউট</button>
+          </div>
         </div>
+      </aside>
+
+      <div className="min-w-0">
+        {/* মোবাইল ট্যাব */}
+        <div className="sticky top-[4.25rem] z-20 -mx-4 mb-5 bg-paper/95 px-4 py-2 backdrop-blur lg:hidden">
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+            {tabs.map((t) => {
+              const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
+              return (
+                <Link key={t.href} href={t.href} className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${active ? "border-brand bg-brand text-white" : "border-line bg-white text-ink"}`}>
+                  <AIcon name={t.icon} size={16} />
+                  {t.label}
+                  {t.href === "/admin/members" && pending > 0 && <span className="rounded-full bg-blood px-1.5 text-xs text-white">{pending}</span>}
+                </Link>
+              );
+            })}
+            <button onClick={logout} className="shrink-0 rounded-full border border-blood/30 bg-white px-4 py-2 text-sm font-semibold text-blood">লগআউট</button>
+          </div>
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
