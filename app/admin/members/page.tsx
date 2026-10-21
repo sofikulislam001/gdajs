@@ -1,25 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Avatar from "@/components/Avatar";
 import { browserClient } from "@/lib/supabase";
-import { BLOOD_GROUPS, bn, en, errorMessage, fmtDate, isValidPhone, normalizePhone, taka, waLink } from "@/lib/bn";
-import type { Member } from "@/lib/types";
+import { BLOOD_GROUPS, bn, currentMonthKey, en, errorMessage, isValidPhone, normalizePhone, taka } from "@/lib/bn";
+import { dueFor } from "@/lib/dues";
+import type { Member, Payment } from "@/lib/types";
 
 type Filter = "pending" | "active" | "inactive";
-const filterLabel: Record<Filter, string> = { pending: "আবেদন", active: "সক্রিয়", inactive: "নিষ্ক্রিয়" };
+const filterLabel: Record<Filter, string> = { pending: "নতুন আবেদন", active: "সক্রিয়", inactive: "নিষ্ক্রিয়" };
+const badge: Record<Filter, string> = { pending: "bg-accent-soft text-[#8a5a00]", active: "bg-brand-soft text-brand-dark", inactive: "bg-line text-muted" };
 
-export default function MembersAdmin() {
+function MembersInner() {
+  const params = useSearchParams();
+  const initial = (["pending", "active", "inactive"].includes(params.get("f") ?? "") ? params.get("f") : "active") as Filter;
   const [members, setMembers] = useState<Member[] | null>(null);
-  const [filter, setFilter] = useState<Filter>("active");
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [filter, setFilter] = useState<Filter>(initial);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
   const [bulk, setBulk] = useState("");
-  const [showBulk, setShowBulk] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
 
   const load = useCallback(async () => {
-    const { data, error } = await browserClient().from("members").select("*").order("name");
-    if (error) setMsg(errorMessage(error));
-    setMembers((data as Member[]) ?? []);
+    const sb = browserClient();
+    const [m, p] = await Promise.all([sb.from("members").select("*").order("created_at", { ascending: false }), sb.from("payments").select("*")]);
+    if (m.error) setMsg(errorMessage(m.error));
+    setMembers((m.data as Member[]) ?? []);
+    setPayments((p.data as Payment[]) ?? []);
   }, []);
 
   useEffect(() => {
@@ -34,38 +44,18 @@ export default function MembersAdmin() {
 
   const shown = useMemo(() => {
     const needle = en(q.trim().toLowerCase());
-    return (members ?? []).filter(
-      (m) => m.status === filter && (!needle || m.name.toLowerCase().includes(needle) || m.phone.includes(needle)),
-    );
+    return (members ?? [])
+      .filter((m) => m.status === filter && (!needle || m.name.toLowerCase().includes(needle) || m.phone.includes(needle) || (m.address ?? "").toLowerCase().includes(needle)))
+      .sort((a, b) => (filter === "pending" ? 0 : a.name.localeCompare(b.name, "bn")));
   }, [members, filter, q]);
-
-  async function update(id: string, patch: Partial<Member>) {
-    const { error } = await browserClient().from("members").update(patch).eq("id", id);
-    if (error) setMsg(errorMessage(error));
-    else setMsg("");
-    await load();
-  }
 
   async function approve(m: Member) {
     const input = window.prompt(`${m.name}-এর মাসিক চাঁদা কত টাকা?`, String(m.monthly_fee));
     if (input === null) return;
     const fee = Number(en(input));
     if (!Number.isFinite(fee) || fee < 0) return setMsg("চাঁদার পরিমাণ সঠিক নয়");
-    await update(m.id, { status: "active", monthly_fee: fee, joined_on: new Date().toISOString().slice(0, 10) });
-  }
-
-  async function editFee(m: Member) {
-    const input = window.prompt(`${m.name}-এর নতুন মাসিক চাঁদা`, String(m.monthly_fee));
-    if (input === null) return;
-    const fee = Number(en(input));
-    if (!Number.isFinite(fee) || fee < 0) return setMsg("চাঁদার পরিমাণ সঠিক নয়");
-    await update(m.id, { monthly_fee: fee });
-  }
-
-  async function remove(m: Member) {
-    if (!window.confirm(`${m.name}-কে মুছে ফেলবেন? তার সব চাঁদার রেকর্ডও মুছে যাবে।`)) return;
-    const { error } = await browserClient().from("members").delete().eq("id", m.id);
-    if (error) setMsg(errorMessage(error));
+    const { error } = await browserClient().from("members").update({ status: "active", monthly_fee: fee, joined_on: new Date().toISOString().slice(0, 10) }).eq("id", m.id);
+    setMsg(error ? errorMessage(error) : `${m.name} এখন সক্রিয় সদস্য`);
     await load();
   }
 
@@ -85,7 +75,7 @@ export default function MembersAdmin() {
     });
     if (error) return setMsg(error.code === "23505" ? "এই নম্বর আগেই আছে" : errorMessage(error));
     form.reset();
-    setMsg("সদস্য যোগ হয়েছে");
+    setMsg("সদস্য যোগ হয়েছে। এখন তার পাতায় গিয়ে বাকি তথ্য ও লগইন পাসওয়ার্ড দিতে পারেন।");
     await load();
   }
 
@@ -116,81 +106,92 @@ export default function MembersAdmin() {
   }
 
   if (!members) return <p className="text-muted">লোড হচ্ছে…</p>;
+  const key = currentMonthKey();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         {(Object.keys(filterLabel) as Filter[]).map((k) => (
           <button key={k} onClick={() => setFilter(k)} className={`btn btn-sm ${filter === k ? "btn-primary" : "btn-ghost"}`}>
             {filterLabel[k]} ({bn(counts[k])})
           </button>
         ))}
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম বা নম্বর খুঁজুন" className="input ml-auto max-w-56" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম, নম্বর বা ঠিকানা খুঁজুন" className="input ml-auto w-full sm:max-w-64" />
       </div>
 
-      {msg && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm">{msg}</p>}
+      {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 font-medium">{msg}</p>}
 
-      <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[640px]">
-          <thead className="border-b border-line bg-paper">
-            <tr><th className="th">নাম</th><th className="th">মোবাইল</th><th className="th">রক্ত</th><th className="th">চাঁদা</th><th className="th" /></tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {shown.length === 0 && <tr><td className="td text-muted" colSpan={5}>কেউ নেই</td></tr>}
-            {shown.map((m) => (
-              <tr key={m.id}>
-                <td className="td">
-                  <p className="font-medium">{m.name}</p>
-                  <p className="text-xs text-muted">{[m.address, m.profession].filter(Boolean).join(" • ")}{m.status === "active" ? ` • যোগদান ${fmtDate(m.joined_on)}` : ""}</p>
-                </td>
-                <td className="td whitespace-nowrap">
-                  <a href={`tel:${m.phone}`} className="text-brand hover:underline">{bn(m.phone)}</a>
-                </td>
-                <td className="td">{m.blood_group ?? "—"}</td>
-                <td className="td whitespace-nowrap">{taka(m.monthly_fee)}</td>
-                <td className="td">
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    {m.status === "pending" && <button onClick={() => approve(m)} className="btn btn-primary btn-sm">অনুমোদন</button>}
-                    {m.status === "active" && <button onClick={() => editFee(m)} className="btn btn-ghost btn-sm">চাঁদা</button>}
-                    {m.status === "active" && <button onClick={() => update(m.id, { status: "inactive" })} className="btn btn-ghost btn-sm">নিষ্ক্রিয়</button>}
-                    {m.status === "inactive" && <button onClick={() => update(m.id, { status: "active" })} className="btn btn-ghost btn-sm">সক্রিয়</button>}
-                    <a href={waLink(m.phone, `আসসালামু আলাইকুম ${m.name}, গোদনাইল আলোকিত যুব শক্তি থেকে বলছি।`)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">হোয়াটসঅ্যাপ</a>
-                    <button onClick={() => remove(m)} className="btn btn-danger btn-sm">মুছুন</button>
+      {shown.length === 0 ? (
+        <p className="card text-muted">এখানে কেউ নেই।</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {shown.map((m) => {
+            const due = dueFor(m, payments, key);
+            return (
+              <div key={m.id} className="card flex flex-col gap-3">
+                <Link href={`/admin/members/${m.id}`} className="flex items-center gap-3">
+                  <Avatar src={m.photo_url} name={m.name} size={56} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-lg font-bold leading-tight">{m.name}</p>
+                    <p className="text-sm text-muted">{bn(m.phone)}{m.blood_group ? ` • ${m.blood_group}` : ""}</p>
+                    <p className="truncate text-sm text-muted">{m.address ?? "ঠিকানা নেই"}</p>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <form onSubmit={addOne} className="card space-y-3">
-          <h2 className="text-lg">নতুন সদস্য যোগ করুন</h2>
-          <input name="name" required placeholder="নাম" className="input" />
-          <input name="phone" required inputMode="tel" placeholder="মোবাইল নম্বর" className="input" />
-          <input name="address" placeholder="ঠিকানা (ঐচ্ছিক)" className="input" />
-          <div className="grid grid-cols-2 gap-3">
-            <select name="blood_group" className="input" defaultValue=""><option value="">রক্তের গ্রুপ</option>{BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}</select>
-            <input name="fee" inputMode="numeric" placeholder="মাসিক চাঁদা (১০০)" className="input" />
-          </div>
-          <button className="btn btn-primary">যোগ করুন</button>
-        </form>
-
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg">একসাথে অনেক সদস্য যোগ</h2>
-            <button onClick={() => setShowBulk((v) => !v)} className="btn btn-ghost btn-sm">{showBulk ? "বন্ধ" : "খুলুন"}</button>
-          </div>
-          {showBulk && (
-            <>
-              <p className="text-sm text-muted">প্রতি লাইনে একজন: <code>নাম, মোবাইল, চাঁদা, রক্তের গ্রুপ</code> (শেষের দুটি ঐচ্ছিক)। Excel/খাতা থেকে কপি-পেস্ট করা যাবে।</p>
-              <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} rows={7} className="input font-mono text-sm" placeholder={"রহিম উদ্দিন, 01711223344, 100, B+\nকরিম, 01911223344"} />
-              <button onClick={importBulk} className="btn btn-primary">ইমপোর্ট করুন</button>
-            </>
-          )}
+                  <span className={`badge ${badge[m.status]}`}>{filterLabel[m.status]}</span>
+                </Link>
+                <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                  {m.status === "active" && (
+                    <span className={`text-sm font-semibold ${due.due > 0 ? "text-blood" : "text-brand"}`}>
+                      {due.due > 0 ? `বকেয়া ${taka(due.amount)} (${bn(due.due)} মাস)` : "বকেয়া নেই"}
+                    </span>
+                  )}
+                  {m.status === "pending" && <button onClick={() => approve(m)} className="btn btn-primary btn-sm">অনুমোদন করুন</button>}
+                  <span className="ml-auto flex gap-1.5">
+                    {m.user_id && <span className="badge bg-sky-soft text-brand-dark">লগইন আছে</span>}
+                    <a href={`tel:${m.phone}`} className="btn btn-ghost btn-sm">কল</a>
+                    <Link href={`/admin/members/${m.id}`} className="btn btn-ghost btn-sm">সব তথ্য</Link>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
+      )}
+
+      <section className="card">
+        <button onClick={() => setShowAdd((v) => !v)} className="flex w-full items-center justify-between text-left">
+          <span className="text-lg font-bold">নতুন সদস্য যোগ করুন (অ্যাডমিন নিজে)</span>
+          <span className="text-brand">{showAdd ? "বন্ধ" : "খুলুন"}</span>
+        </button>
+        {showAdd && (
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <form onSubmit={addOne} className="space-y-3">
+              <h3 className="font-semibold">একজন সদস্য</h3>
+              <input name="name" required placeholder="নাম" className="input" />
+              <input name="phone" required inputMode="tel" placeholder="মোবাইল নম্বর" className="input" />
+              <input name="address" placeholder="ঠিকানা (ঐচ্ছিক)" className="input" />
+              <div className="grid grid-cols-2 gap-3">
+                <select name="blood_group" className="input" defaultValue=""><option value="">রক্তের গ্রুপ</option>{BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}</select>
+                <input name="fee" inputMode="numeric" placeholder="মাসিক চাঁদা (১০০)" className="input" />
+              </div>
+              <button className="btn btn-primary">যোগ করুন</button>
+            </form>
+            <div className="space-y-3">
+              <h3 className="font-semibold">একসাথে অনেকজন</h3>
+              <p className="text-sm text-muted">প্রতি লাইনে একজন: <code>নাম, মোবাইল, চাঁদা, রক্তের গ্রুপ</code> (শেষের দুটি ঐচ্ছিক)। খাতা বা Excel থেকে কপি-পেস্ট করা যাবে।</p>
+              <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} rows={6} className="input font-mono text-sm" placeholder={"রহিম উদ্দিন, 01711223344, 100, B+\nকরিম, 01911223344"} />
+              <button onClick={importBulk} className="btn btn-primary">ইমপোর্ট করুন</button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
+  );
+}
+
+export default function MembersAdmin() {
+  return (
+    <Suspense fallback={<p className="text-muted">লোড হচ্ছে…</p>}>
+      <MembersInner />
+    </Suspense>
   );
 }

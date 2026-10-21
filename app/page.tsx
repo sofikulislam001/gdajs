@@ -20,7 +20,7 @@ async function load() {
   const [stats, events, posts] = await Promise.all([
     sb.rpc("get_public_stats"),
     sb.from("events").select("*").eq("published", true).order("event_date", { ascending: false }).limit(6),
-    sb.from("fb_posts").select("*").eq("published", true).order("posted_on", { ascending: false }).limit(3),
+    sb.from("fb_posts").select("*").eq("published", true).order("posted_on", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(3),
   ]);
   return {
     stats: (stats.data as PublicStats | null) ?? null,

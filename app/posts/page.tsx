@@ -14,7 +14,7 @@ export default async function PostsPage() {
     .from("fb_posts")
     .select("*")
     .eq("published", true)
-    .order("posted_on", { ascending: false })
+    .order("posted_on", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false })
     .limit(60);
   const posts = (data as FbPost[] | null) ?? [];
   const feed = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(FB_PAGE_URL)}&tabs=timeline&width=500&height=760&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true`;

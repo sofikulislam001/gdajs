@@ -22,6 +22,15 @@ export type Member = {
   monthly_fee: number;
   status: "pending" | "active" | "inactive";
   joined_on: string;
+  user_id: string | null;
+  photo_url: string | null;
+  father_name: string | null;
+  dob: string | null;
+  education: string | null;
+  email: string | null;
+  about: string | null;
+  is_demo: boolean;
+  created_at: string;
 };
 
 export type Payment = {
@@ -65,6 +74,6 @@ export type FbPost = {
   title: string | null;
   preview: string | null;
   image_url: string | null;
-  posted_on: string;
+  posted_on: string | null;
   published: boolean;
 };

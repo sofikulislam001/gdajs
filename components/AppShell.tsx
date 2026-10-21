@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import Avatar from "./Avatar";
 import Logo from "./Logo";
 import {
   AdminIcon, BloodIcon, EventIcon, FacebookIcon, HelplineIcon, InfoIcon, NavIcon,
   NoticeIcon, PeopleIcon, PostIcon, ReceiptIcon, ShareIcon, WalletIcon,
 } from "./Icons";
+import { useAuth } from "@/lib/auth";
+import { browserClient, isConfigured } from "@/lib/supabase";
 import { FB_PAGE_URL } from "@/lib/brand";
 import { ORG_NAME, ORG_SLOGAN } from "@/lib/bn";
 
@@ -18,8 +21,8 @@ const drawerItems = [
   { href: "/posts", label: "ফেসবুক পোস্ট", icon: PostIcon },
   { href: "/blood", label: "রক্তদাতা", icon: BloodIcon },
   { href: "/hishab", label: "স্বচ্ছ হিসাব", icon: WalletIcon },
-  { href: "/dues", label: "আমার বকেয়া", icon: ReceiptIcon },
-  { href: "/join", label: "সদস্য আবেদন", icon: PeopleIcon },
+  { href: "/profile", label: "আমার প্রোফাইল ও বকেয়া", icon: ReceiptIcon },
+  { href: "/join", label: "সদস্য হোন", icon: PeopleIcon },
   { href: "/helpline", label: "হেল্পলাইন", icon: HelplineIcon },
 ];
 
@@ -27,18 +30,33 @@ const tabs = [
   { href: "/", label: "হোম", icon: "home" as const },
   { href: "/events", label: "কার্যক্রম", icon: "event" as const },
   { href: "/hishab", label: "হিসাব", icon: "wallet" as const },
-  { href: "/dues", label: "আমার", icon: "user" as const },
+  { href: "/profile", label: "প্রোফাইল", icon: "user" as const },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const [me, setMe] = useState<{ name: string; photo: string | null } | null>(null);
   const isHome = pathname === "/";
   const isAdmin = pathname.startsWith("/admin");
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user || !isConfigured) {
+      setMe(null);
+      return;
+    }
+    browserClient()
+      .from("members")
+      .select("name,photo_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setMe(data ? { name: data.name as string, photo: (data.photo_url as string | null) ?? null } : null));
+  }, [user, pathname]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -72,12 +90,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden sm:block"><Logo size={34} /></span>
             <span className="truncate text-center text-lg font-bold sm:text-xl">{ORG_NAME}</span>
           </Link>
-          <Link href="/events?kind=notice" aria-label="নোটিশ" className="-mr-2 rounded-xl p-2 hover:bg-white/15">
-            <NavIcon name="bell" size={26} />
-          </Link>
+          <div className="-mr-2 flex items-center gap-1">
+            <Link href="/events?kind=notice" aria-label="নোটিশ" className="rounded-xl p-2 hover:bg-white/15">
+              <NavIcon name="bell" size={26} />
+            </Link>
+            {user ? (
+              <Link href="/profile" aria-label="আমার প্রোফাইল" className="rounded-full">
+                <Avatar src={me?.photo} name={me?.name ?? "আমি"} size={36} />
+              </Link>
+            ) : (
+              <Link href="/login" className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-brand-dark shadow hover:bg-white/90">লগইন</Link>
+            )}
+          </div>
         </div>
         <nav className="container-x hidden gap-1 pb-2 md:flex">
-          {[{ href: "/", label: "হোম" }, { href: "/events", label: "কার্যক্রম" }, { href: "/posts", label: "ফেসবুক পোস্ট" }, { href: "/blood", label: "রক্তদাতা" }, { href: "/hishab", label: "স্বচ্ছ হিসাব" }, { href: "/dues", label: "আমার বকেয়া" }, { href: "/join", label: "সদস্য হোন" }].map((l) => (
+          {[{ href: "/", label: "হোম" }, { href: "/events", label: "কার্যক্রম" }, { href: "/posts", label: "ফেসবুক পোস্ট" }, { href: "/blood", label: "রক্তদাতা" }, { href: "/hishab", label: "স্বচ্ছ হিসাব" }, { href: "/profile", label: "আমার প্রোফাইল" }, { href: "/join", label: "সদস্য হোন" }].map((l) => (
             <Link key={l.href} href={l.href} className={`rounded-xl px-3 py-1.5 font-medium hover:bg-white/15 ${pathname === l.href ? "bg-white/20" : ""}`}>
               {l.label}
             </Link>
@@ -112,6 +139,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <ShareIcon size={30} />
               শেয়ার করুন
             </button>
+            {user ? (
+              <button
+                onClick={async () => {
+                  await browserClient().auth.signOut();
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-4 px-6 py-3 text-left text-lg font-medium text-blood hover:bg-sky-soft"
+              >
+                <NavIcon name="close" size={26} />
+                লগআউট
+              </button>
+            ) : (
+              <Link href="/login" className="flex items-center gap-4 px-6 py-3 text-lg font-semibold text-brand-dark hover:bg-sky-soft">
+                <NavIcon name="user" size={26} />
+                লগইন করুন
+              </Link>
+            )}
             <Link href="/admin" className="flex items-center gap-4 px-6 py-3 text-lg font-medium text-muted hover:bg-sky-soft">
               <AdminIcon size={30} />
               অ্যাডমিন

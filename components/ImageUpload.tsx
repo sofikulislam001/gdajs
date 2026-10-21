@@ -3,13 +3,12 @@
 import { useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { errorMessage } from "@/lib/bn";
+import Avatar from "./Avatar";
 
-const MAX_SIDE = 1600;
-
-/** ফোনের বড় ছবি ছোট করে (সর্বোচ্চ ১৬০০px, JPEG) আপলোডের জন্য প্রস্তুত করে */
-async function shrink(file: File): Promise<Blob> {
+/** ফোনের বড় ছবি ছোট করে JPEG বানায় */
+async function shrink(file: File, maxSide: number): Promise<Blob> {
   const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bmp.width * scale);
   canvas.height = Math.round(bmp.height * scale);
@@ -19,7 +18,18 @@ async function shrink(file: File): Promise<Blob> {
   );
 }
 
-export default function ImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+type Props = {
+  value: string;
+  onChange: (url: string) => void;
+  /** আপলোডের ফোল্ডার; সদস্যের ছবির জন্য "avatars/<নিজের id>" */
+  folder?: string;
+  maxSide?: number;
+  /** গোল প্রোফাইল ছবির ধরন */
+  avatar?: boolean;
+  name?: string;
+};
+
+export default function ImageUpload({ value, onChange, folder, maxSide = 1600, avatar = false, name }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -29,8 +39,9 @@ export default function ImageUpload({ value, onChange }: { value: string; onChan
     setError("");
     setBusy(true);
     try {
-      const blob = await shrink(file);
-      const path = `${new Date().getFullYear()}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const blob = await shrink(file, maxSide);
+      const dir = folder ?? String(new Date().getFullYear());
+      const path = `${dir}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jpg`;
       const sb = browserClient();
       const { error: err } = await sb.storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
       if (err) throw err;
@@ -44,19 +55,25 @@ export default function ImageUpload({ value, onChange }: { value: string; onChan
   }
 
   return (
-    <div className="space-y-2">
-      {value && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="নির্বাচিত ছবি" className="aspect-[16/9] w-full rounded-2xl border border-line object-cover" />
+    <div className={avatar ? "flex items-center gap-4" : "space-y-2"}>
+      {avatar ? (
+        <Avatar src={value} name={name} size={88} />
+      ) : (
+        value && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="নির্বাচিত ছবি" className="aspect-[16/9] w-full rounded-2xl border border-line object-cover" />
+        )
       )}
-      <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={busy} onClick={() => input.current?.click()} className="btn btn-ghost btn-sm">
-          {busy ? "আপলোড হচ্ছে…" : value ? "ছবি বদলান" : "ছবি আপলোড করুন"}
-        </button>
-        {value && <button type="button" onClick={() => onChange("")} className="btn btn-danger btn-sm">ছবি সরান</button>}
+      <div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={busy} onClick={() => input.current?.click()} className="btn btn-ghost btn-sm">
+            {busy ? "আপলোড হচ্ছে…" : value ? "ছবি বদলান" : "ছবি আপলোড করুন"}
+          </button>
+          {value && !busy && <button type="button" onClick={() => onChange("")} className="btn btn-danger btn-sm">ছবি সরান</button>}
+        </div>
+        {error && <p className="mt-1 text-sm text-blood">{error}</p>}
       </div>
       <input ref={input} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
-      {error && <p className="text-sm text-blood">{error}</p>}
     </div>
   );
 }

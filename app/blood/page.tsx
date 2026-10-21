@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Avatar from "@/components/Avatar";
 import SetupNotice from "@/components/SetupNotice";
 import { browserClient, isConfigured } from "@/lib/supabase";
 import { BLOOD_GROUPS, errorMessage, fmtDate } from "@/lib/bn";
@@ -12,6 +13,7 @@ type Donor = {
   phone: string;
   last_blood_donation: string | null;
   available: boolean;
+  photo_url: string | null;
 };
 
 export default function BloodPage() {
@@ -24,7 +26,7 @@ export default function BloodPage() {
     let cancelled = false;
     setDonors(null);
     browserClient()
-      .rpc("get_blood_donors", { p_group: group || null })
+      .rpc("get_donors_v2", { p_group: group || null })
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) setError(errorMessage(error));
@@ -58,8 +60,9 @@ export default function BloodPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         {donors?.map((d) => (
           <div key={d.phone} className="card flex items-center gap-4">
-            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blood/10 font-display text-xl font-bold text-blood">
-              {d.blood_group}
+            <div className="relative shrink-0">
+              <Avatar src={d.photo_url} name={d.name} size={60} />
+              <span className="absolute -bottom-1 -right-1 rounded-full bg-blood px-1.5 py-0.5 text-xs font-bold text-white shadow">{d.blood_group}</span>
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{d.name}</p>

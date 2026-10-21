@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import EventImage from "./EventImage";
 import { FacebookIcon, NavIcon } from "./Icons";
-import { fmtDate } from "@/lib/bn";
 import type { FbPost } from "@/lib/types";
 
 /** ফেসবুকের নির্দিষ্ট পোস্টের লিংক কি না (পেজের হোম লিংক হলে এমবেড হবে না) */
@@ -40,7 +39,6 @@ export default function FbPostCard({ post }: { post: FbPost }) {
           <span className="absolute left-3 top-3 rounded-full bg-white/95 p-1 shadow"><FacebookIcon size={22} /></span>
         </div>
         <div className="p-4">
-          <p className="text-sm text-muted">{fmtDate(post.posted_on)}</p>
           {post.title && <h3 className="mt-0.5 text-lg leading-snug">{post.title}</h3>}
           {post.preview && <p className="mt-1.5 line-clamp-3 text-muted">{post.preview}</p>}
           <p className="mt-3 text-sm font-semibold text-brand">পুরো পোস্ট দেখুন →</p>
@@ -57,7 +55,6 @@ export default function FbPostCard({ post }: { post: FbPost }) {
             </div>
             <div className="overflow-y-auto p-4">
               {post.title && <h2 className="text-xl">{post.title}</h2>}
-              <p className="mb-3 text-sm text-muted">{fmtDate(post.posted_on)}</p>
               {post.image_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={post.image_url} alt="" className="mb-3 w-full rounded-2xl" />
