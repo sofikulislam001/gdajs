@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function MenuCard({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+export default function MenuCard({ href, label, children }: { href: string; label: React.ReactNode; children: React.ReactNode }) {
   return (
     <Link
       href={href}

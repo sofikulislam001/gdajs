@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { LangProvider } from "@/lib/lang";
 import AppShell from "@/components/AppShell";
 import { ORG_NAME, ORG_SLOGAN } from "@/lib/bn";
 
@@ -37,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <AppShell>{children}</AppShell>
+        <LangProvider><AppShell>{children}</AppShell></LangProvider>
       </body>
     </html>
   );

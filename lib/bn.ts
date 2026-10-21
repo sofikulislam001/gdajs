@@ -1,3 +1,5 @@
+import { getLang } from "./langState";
+
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 
 export const ORG_NAME = "গোদনাইল আলোকিত যুব শক্তি";
@@ -7,6 +9,7 @@ export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] a
 
 /** ইংরেজি সংখ্যা → বাংলা সংখ্যা */
 export function bn(value: number | string): string {
+  if (getLang() === "en") return String(value);
   return String(value).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
 }
 
@@ -22,12 +25,12 @@ export function taka(n: number | null | undefined): string {
 export function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "";
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
-  return new Intl.DateTimeFormat("bn-BD", { day: "numeric", month: "long", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat(getLang() === "en" ? "en-GB" : "bn-BD", { day: "numeric", month: "long", year: "numeric" }).format(d);
 }
 
 export function fmtMonth(iso: string): string {
   const d = new Date(`${iso.slice(0, 7)}-01T00:00:00`);
-  return new Intl.DateTimeFormat("bn-BD", { month: "long", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat(getLang() === "en" ? "en-GB" : "bn-BD", { month: "long", year: "numeric" }).format(d);
 }
 
 /** "2026-10" ফরম্যাটে চলতি মাস */

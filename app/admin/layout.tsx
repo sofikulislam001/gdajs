@@ -30,6 +30,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [busy, setBusy] = useState(false);
   const pathname = usePathname();
   const [pending, setPending] = useState(0);
+  const [menu, setMenu] = useState(false);
+
+  useEffect(() => {
+    setMenu(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = menu ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menu]);
 
   async function check() {
     const sb = browserClient();
@@ -104,60 +116,78 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const current = tabs.find((t) => (t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href)));
+  const groups: { title: string; hrefs: string[] }[] = [
+    { title: "ওভারভিউ", hrefs: ["/admin"] },
+    { title: "ব্যবস্থাপনা", hrefs: ["/admin/members", "/admin/chada", "/admin/khoroch"] },
+    { title: "কনটেন্ট", hrefs: ["/admin/events", "/admin/posts"] },
+    { title: "সিস্টেম", hrefs: ["/admin/settings"] },
+  ];
+
   return (
-    <div className="lg:grid lg:grid-cols-[15.5rem_1fr] lg:gap-6">
-      {/* ডেস্কটপ সাইডবার */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-24 overflow-hidden rounded-3xl bg-gradient-to-b from-[#12324f] via-[#1b4a73] to-[#245f8f] p-3 text-white shadow-[0_12px_32px_rgba(18,50,79,0.35)]">
-          <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3">
-            <span className="rounded-full bg-white p-0.5"><Logo size={40} /></span>
-            <div className="min-w-0">
+    <div className="min-h-screen bg-paper">
+      {/* উপরের বার */}
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-[#12324f] to-[#1f5a8a] text-white shadow-md">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3">
+          <button onClick={() => setMenu(true)} aria-label="মেনু খুলুন" className="rounded-xl p-2 hover:bg-white/15">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-bold leading-tight">{current?.label ?? "অ্যাডমিন"}</p>
+            <p className="hidden text-xs text-white/70 sm:block">গোদনাইল আলোকিত যুব শক্তি • অ্যাডমিন প্যানেল</p>
+          </div>
+          {pending > 0 && (
+            <Link href="/admin/members" className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm font-bold text-ink">
+              {pending} <span className="hidden sm:inline">নতুন আবেদন</span>
+            </Link>
+          )}
+          <Link href="/" target="_blank" className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/15 sm:flex"><AIcon name="external" size={16} /> সাইট</Link>
+          <span className="rounded-full bg-white p-0.5"><Logo size={32} /></span>
+        </div>
+      </header>
+
+      {/* ড্রয়ার মেনু */}
+      <div className={`fixed inset-0 z-40 ${menu ? "" : "pointer-events-none"}`} aria-hidden={!menu}>
+        <div onClick={() => setMenu(false)} className={`absolute inset-0 bg-black/50 transition-opacity ${menu ? "opacity-100" : "opacity-0"}`} />
+        <aside className={`absolute inset-y-0 left-0 flex w-[84%] max-w-xs flex-col overflow-y-auto bg-gradient-to-b from-[#12324f] via-[#1b4a73] to-[#245f8f] text-white shadow-2xl transition-transform duration-300 ${menu ? "translate-x-0" : "-translate-x-full"}`}>
+          <div className="flex items-center gap-3 px-4 pb-3 pt-5">
+            <span className="rounded-full bg-white p-0.5"><Logo size={44} /></span>
+            <div className="min-w-0 flex-1">
               <p className="truncate font-bold leading-tight">অ্যাডমিন প্যানেল</p>
               <p className="text-xs text-white/70">ম্যানেজমেন্ট সিস্টেম</p>
             </div>
+            <button onClick={() => setMenu(false)} aria-label="বন্ধ করুন" className="rounded-xl p-2 hover:bg-white/15">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M5 5l14 14M19 5L5 19" /></svg>
+            </button>
           </div>
-          <p className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-widest text-white/50">মেনু</p>
-          <nav className="space-y-0.5">
-            {tabs.map((t) => {
-              const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
-              return (
-                <Link key={t.href} href={t.href} className={`relative flex items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold transition ${active ? "bg-white text-[#12324f] shadow" : "text-white/85 hover:bg-white/10"}`}>
-                  {active && <span className="absolute -left-3 top-2 bottom-2 w-1 rounded-r bg-accent" />}
-                  <AIcon name={t.icon} />
-                  <span className="flex-1">{t.label}</span>
-                  {t.href === "/admin/members" && pending > 0 && (
-                    <span className="rounded-full bg-blood px-2 py-0.5 text-xs font-bold text-white">{pending}</span>
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="flex-1 space-y-4 px-3 py-2">
+            {groups.map((g) => (
+              <div key={g.title}>
+                <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest text-white/50">{g.title}</p>
+                <div className="space-y-0.5">
+                  {g.hrefs.map((h) => {
+                    const t = tabs.find((x) => x.href === h)!;
+                    const active = h === "/admin" ? pathname === "/admin" : pathname.startsWith(h);
+                    return (
+                      <Link key={h} href={h} className={`flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold transition ${active ? "bg-white text-[#12324f] shadow" : "text-white/90 hover:bg-white/10"}`}>
+                        <AIcon name={t.icon} />
+                        <span className="flex-1">{t.label}</span>
+                        {h === "/admin/members" && pending > 0 && <span className="rounded-full bg-blood px-2 py-0.5 text-xs font-bold text-white">{pending}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
-          <div className="mt-4 space-y-0.5 border-t border-white/15 pt-3">
-            <Link href="/" target="_blank" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold text-white/80 hover:bg-white/10"><AIcon name="external" /> সাইট দেখুন</Link>
-            <button onClick={logout} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 font-semibold text-[#ffb4b4] hover:bg-white/10"><AIcon name="logout" /> লগআউট</button>
+          <div className="space-y-0.5 border-t border-white/15 px-3 py-3">
+            <Link href="/" target="_blank" className="flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold text-white/85 hover:bg-white/10"><AIcon name="external" /> সাইট দেখুন</Link>
+            <button onClick={logout} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 font-semibold text-[#ffb4b4] hover:bg-white/10"><AIcon name="logout" /> লগআউট</button>
           </div>
-        </div>
-      </aside>
-
-      <div className="min-w-0">
-        {/* মোবাইল ট্যাব */}
-        <div className="sticky top-[4.25rem] z-20 -mx-4 mb-5 bg-paper/95 px-4 py-2 backdrop-blur lg:hidden">
-          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
-            {tabs.map((t) => {
-              const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
-              return (
-                <Link key={t.href} href={t.href} className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${active ? "border-brand bg-brand text-white" : "border-line bg-white text-ink"}`}>
-                  <AIcon name={t.icon} size={16} />
-                  {t.label}
-                  {t.href === "/admin/members" && pending > 0 && <span className="rounded-full bg-blood px-1.5 text-xs text-white">{pending}</span>}
-                </Link>
-              );
-            })}
-            <button onClick={logout} className="shrink-0 rounded-full border border-blood/30 bg-white px-4 py-2 text-sm font-semibold text-blood">লগআউট</button>
-          </div>
-        </div>
-        {children}
+        </aside>
       </div>
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-5 pb-12">{children}</main>
     </div>
   );
 }
