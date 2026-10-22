@@ -16,6 +16,16 @@ export default function NoticeAdmin() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [pushUsers, setPushUsers] = useState<number | null>(null);
   const key = currentMonthKey();
+  const LINKS: [string, string][] = [
+    ["", "কোনো লিংক নেই (শুধু নোটিফিকেশন তালিকায় থাকবে)"],
+    ["/events?kind=notice", "নোটিশ পাতা"],
+    ["/events", "কার্যক্রম পাতা"],
+    ["/blood", "রক্তদাতা ও জরুরি রক্ত"],
+    ["/hishab", "স্বচ্ছ হিসাব"],
+    ["/profile?tab=chada", "আমার চাঁদার হিসাব"],
+    ["/gallery", "ফটো গ্যালারি"],
+    ["/honors", "সম্মাননা"],
+  ];
 
   useEffect(() => {
     const sb = browserClient();
@@ -42,6 +52,13 @@ export default function NoticeAdmin() {
     setLink("");
   }
 
+  async function testPush() {
+    setBusy("test");
+    const { error } = await browserClient().rpc("admin_test_push");
+    setBusy("");
+    setMsg(error ? errorMessage(error) : "টেস্ট নোটিফিকেশন পাঠানো হয়েছে। আপনার ফোনে (সেটিংসে পুশ চালু থাকলে) কয়েক সেকেন্ডে আসবে।");
+  }
+
   async function remind() {
     if (!window.confirm("যাদের চাঁদা বাকি তাদের সবাইকে এখনই রিমাইন্ডার পাঠাবেন?")) return;
     setBusy("rem");
@@ -66,10 +83,21 @@ export default function NoticeAdmin() {
         <h2 className="text-lg">সবাইকে নোটিশ পাঠান</h2>
         <input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={120} placeholder="শিরোনাম (যেমন: শুক্রবার সভা)" className="input" />
         <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={600} placeholder="বিস্তারিত লিখুন" className="input" />
-        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="লিংক (ঐচ্ছিক, যেমন /events)" className="input" />
+        <div>
+          <label className="label" htmlFor="nlink">চাপলে কোন পাতা খুলবে?</label>
+          <select id="nlink" value={link} onChange={(e) => setLink(e.target.value)} className="input">
+            {LINKS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
         <button disabled={busy === "send"} className="btn btn-primary w-full py-3">{busy === "send" ? "পাঠানো হচ্ছে…" : "সব সক্রিয় সদস্যকে পাঠান"}</button>
         <p className="text-xs text-muted">সদস্যরা অ্যাপের ঘণ্টা (🔔) আইকনে এটি দেখবেন। যাঁরা সেটিংসে &ldquo;ফোনে পুশ নোটিফিকেশন&rdquo; চালু করেছেন, তাঁদের ফোনের স্ক্রিনেও আসবে।{pushUsers !== null && <> এখন পুশ চালু আছে <b>{bn(pushUsers)} জন</b> সদস্যের।</>}</p>
       </form>
+
+      <div className="card space-y-2">
+        <h2 className="text-lg">পুশ টেস্ট</h2>
+        <p className="text-sm text-muted">আগে এই ফোনে সাইটের সেটিংস থেকে &ldquo;ফোনে পুশ নোটিফিকেশন&rdquo; চালু করুন। তারপর অ্যাপ বন্ধ করে বা অন্য অ্যাপে গিয়ে নিচের বোতাম চাপুন; ফোনের স্ক্রিনে নোটিফিকেশন আসার কথা।</p>
+        <button disabled={busy === "test"} onClick={testPush} className="btn btn-ghost w-full">{busy === "test" ? "পাঠানো হচ্ছে…" : "নিজের ফোনে টেস্ট পাঠান"}</button>
+      </div>
 
       <div className="card space-y-3">
         <h2 className="text-lg">চাঁদার রিমাইন্ডার</h2>

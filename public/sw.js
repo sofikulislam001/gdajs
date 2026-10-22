@@ -1,5 +1,5 @@
 /* সার্ভিস ওয়ার্কার: অ্যাপ ইনস্টল, অফলাইন ফলব্যাক ও পুশ নোটিফিকেশন। ডেটা (Supabase) কখনও ক্যাশ হয় না। */
-const CACHE = "gajs-v2";
+const CACHE = "gajs-v3";
 const OFFLINE = "/offline.html";
 
 self.addEventListener("install", (e) => {
@@ -42,7 +42,9 @@ self.addEventListener("push", (e) => {
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const target = new URL((e.notification.data && e.notification.data.url) || "/notifications", self.location.origin).href;
+  let raw = (e.notification.data && e.notification.data.url) || "/notifications";
+  if (!/^(\/|https?:\/\/)/.test(raw)) raw = "/notifications";
+  const target = new URL(raw, self.location.origin).href;
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) {

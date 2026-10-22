@@ -64,7 +64,8 @@ export default function NotificationsPage() {
                 </div>
               </div>
             );
-            return n.link ? <Link key={n.id} href={n.link} onClick={() => open(n)} className="block">{body}</Link> : <button key={n.id} onClick={() => open(n)} className="block w-full text-left">{body}</button>;
+            const safe = n.link && /^(\/|https?:\/\/)/.test(n.link) ? n.link : null;
+            return safe ? <Link key={n.id} href={safe} onClick={() => open(n)} className="block">{body}</Link> : <button key={n.id} onClick={() => open(n)} className="block w-full text-left">{body}</button>;
           })}
         </div>
       )}
