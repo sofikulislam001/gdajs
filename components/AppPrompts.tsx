@@ -51,6 +51,7 @@ export default function AppPrompts() {
   const [mobile, setMobile] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [help, setHelp] = useState(false);
 
   // ইনস্টল ইভেন্ট ধরে রাখা (সেটিংসের বোতামও এটি ব্যবহার করে)
   useEffect(() => {
@@ -58,14 +59,10 @@ export default function AppPrompts() {
     setIos(/iphone|ipad|ipod/i.test(ua));
     setMobile(/android|iphone|ipad|ipod|mobile/i.test(ua));
     const w = window as Window & { __bip?: BIPEvent };
-    const h = (e: Event) => {
-      e.preventDefault();
-      w.__bip = e as BIPEvent;
-      setBip(e as BIPEvent);
-      window.dispatchEvent(new Event("bip-ready"));
-    };
-    window.addEventListener("beforeinstallprompt", h);
-    return () => window.removeEventListener("beforeinstallprompt", h);
+    if (w.__bip) setBip(w.__bip);
+    const h = () => setBip(w.__bip ?? null);
+    window.addEventListener("bip-ready", h);
+    return () => window.removeEventListener("bip-ready", h);
   }, []);
 
   // কোন ডায়ালগ দেখানো হবে
@@ -99,7 +96,10 @@ export default function AppPrompts() {
   if (show === "install" && !bip && !ios && !mobile) return null;
 
   async function installNow() {
-    if (!bip) return;
+    if (!bip) {
+      setHelp(true);
+      return;
+    }
     await bip.prompt();
     const r = await bip.userChoice.catch(() => ({ outcome: "dismissed" }));
     (window as Window & { __bip?: BIPEvent }).__bip = undefined;
@@ -158,14 +158,13 @@ export default function AppPrompts() {
           <li>🔔 {tr("নোটিশ ও জরুরি রক্তের খবর ফোনে পান", "Get notices and blood alerts on your phone")}</li>
           <li>💳 {tr("চাঁদা জমা ও রসিদ দ্রুত", "Pay dues and get receipts quickly")}</li>
         </ul>
-        {bip ? (
-          <button onClick={installNow} className="btn btn-primary w-full py-3 text-lg">{tr("ইনস্টল করুন", "Install")}</button>
-        ) : ios ? (
-          <p className="rounded-2xl bg-paper p-3 text-sm">{tr("Safari-তে নিচের শেয়ার (⬆️) বোতাম চাপুন, তারপর “Add to Home Screen” বেছে নিন।", "In Safari tap the Share (⬆️) button, then choose “Add to Home Screen”.")}</p>
+        <button onClick={installNow} className="btn btn-primary w-full py-3 text-lg">⬇️ {tr("অ্যাপ ইনস্টল করুন", "Install app")}</button>
+        {help && !bip && (ios ? (
+          <p className="rounded-2xl bg-paper p-3 text-sm">{tr("আইফোনে: Safari-র নিচের শেয়ার (⬆️) বোতাম চাপুন, তারপর “Add to Home Screen” বেছে নিন।", "On iPhone: tap the Share (⬆️) button in Safari, then choose “Add to Home Screen”.")}</p>
         ) : (
-          <p className="rounded-2xl bg-paper p-3 text-sm">{tr("ব্রাউজারের মেনু (⋮) খুলে “Install app” বা “Add to Home screen” বেছে নিন।", "Open the browser menu (⋮) and choose “Install app” or “Add to Home screen”.")}</p>
-        )}
-        <button onClick={() => later(INSTALL_KEY)} className="btn btn-ghost w-full">{bip ? tr("পরে", "Later") : tr("বুঝেছি", "Got it")}</button>
+          <p className="rounded-2xl bg-paper p-3 text-sm">{tr("ব্রাউজারের ওপরের ডানের মেনু (⋮) খুলে “Install app” বা “Add to Home screen” চাপুন।", "Open the top-right browser menu (⋮) and tap “Install app” or “Add to Home screen”.")}</p>
+        ))}
+        <button onClick={() => later(INSTALL_KEY)} className="btn btn-ghost w-full">{tr("পরে", "Later")}</button>
         <button onClick={() => { remember(INSTALL_KEY, "never"); setShow(null); }} className="block w-full text-center text-sm text-muted underline">{tr("আর দেখাবেন না", "Don't show again")}</button>
       </div>
     </Sheet>
