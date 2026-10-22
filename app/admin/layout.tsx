@@ -19,6 +19,7 @@ const tabs: { href: string; label: string; icon: AdminIconName }[] = [
   { href: "/admin/posts", label: "ফেসবুক পোস্ট", icon: "facebook" },
   { href: "/admin/requests", label: "চাঁদা যাচাই", icon: "check" },
   { href: "/admin/notice", label: "নোটিশ ও রিমাইন্ডার", icon: "chat" },
+  { href: "/admin/blood", label: "রক্তদাতা ব্যবস্থাপনা", icon: "alert" },
   { href: "/admin/gallery", label: "ফটো গ্যালারি", icon: "grid" },
   { href: "/admin/honors", label: "সম্মাননা", icon: "alert" },
   { href: "/admin/report", label: "মাসিক রিপোর্ট", icon: "list" },
@@ -37,6 +38,7 @@ const ACCESS: Record<string, Role[]> = {
   "/admin/events": ["super", "editor"],
   "/admin/posts": ["super", "editor"],
   "/admin/gallery": ["super", "editor"],
+  "/admin/blood": ["super", "editor"],
   "/admin/honors": ["super", "editor"],
   "/admin/notice": ["super", "editor"],
   "/admin/settings": ["super"],
@@ -151,7 +153,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const groups: { title: string; hrefs: string[] }[] = [
     { title: "ওভারভিউ", hrefs: ["/admin"] },
     { title: "ব্যবস্থাপনা", hrefs: ["/admin/members", "/admin/chada", "/admin/requests", "/admin/khoroch", "/admin/report"] },
-    { title: "কনটেন্ট", hrefs: ["/admin/events", "/admin/posts", "/admin/gallery", "/admin/honors", "/admin/notice"] },
+    { title: "কনটেন্ট", hrefs: ["/admin/events", "/admin/posts", "/admin/blood", "/admin/gallery", "/admin/honors", "/admin/notice"] },
     { title: "সিস্টেম", hrefs: ["/admin/settings"] },
   ]
     .map((g) => ({ ...g, hrefs: g.hrefs.filter((h) => ACCESS[h]?.includes(role)) }))
