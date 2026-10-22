@@ -17,8 +17,30 @@ const tabs: { href: string; label: string; icon: AdminIconName }[] = [
   { href: "/admin/khoroch", label: "খরচ ও অনুদান", icon: "receipt" },
   { href: "/admin/events", label: "কার্যক্রম", icon: "calendar" },
   { href: "/admin/posts", label: "ফেসবুক পোস্ট", icon: "facebook" },
-  { href: "/admin/settings", label: "সেটিংস", icon: "settings" },
+  { href: "/admin/requests", label: "চাঁদা যাচাই", icon: "check" },
+  { href: "/admin/notice", label: "নোটিশ ও রিমাইন্ডার", icon: "chat" },
+  { href: "/admin/gallery", label: "ফটো গ্যালারি", icon: "grid" },
+  { href: "/admin/honors", label: "সম্মাননা", icon: "alert" },
+  { href: "/admin/report", label: "মাসিক রিপোর্ট", icon: "list" },
+  { href: "/admin/settings", label: "সেটিংস ও অ্যাডমিন", icon: "settings" },
 ];
+
+type Role = "super" | "treasurer" | "editor";
+/** কোন রোল কোন পাতা দেখতে পারে (super সব দেখে) */
+const ACCESS: Record<string, Role[]> = {
+  "/admin": ["super", "treasurer", "editor"],
+  "/admin/members": ["super", "treasurer"],
+  "/admin/chada": ["super", "treasurer"],
+  "/admin/requests": ["super", "treasurer"],
+  "/admin/khoroch": ["super", "treasurer"],
+  "/admin/report": ["super", "treasurer"],
+  "/admin/events": ["super", "editor"],
+  "/admin/posts": ["super", "editor"],
+  "/admin/gallery": ["super", "editor"],
+  "/admin/honors": ["super", "editor"],
+  "/admin/notice": ["super", "editor"],
+  "/admin/settings": ["super"],
+};
 
 type State = "loading" | "out" | "not-admin" | "ok";
 
@@ -30,6 +52,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [busy, setBusy] = useState(false);
   const pathname = usePathname();
   const [pending, setPending] = useState(0);
+  const [reqCount, setReqCount] = useState(0);
+  const [role, setRole] = useState<Role>("super");
   const [menu, setMenu] = useState(false);
 
   useEffect(() => {
@@ -50,6 +74,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { data: ok } = await sb.rpc("is_admin");
     setState(ok === true ? "ok" : "not-admin");
     if (ok === true) {
+      const { data: r } = await sb.rpc("admin_role");
+      const rr: Role = r === "treasurer" || r === "editor" ? r : "super";
+      setRole(rr);
+      if (rr !== "editor") {
+        const { count: rc } = await sb.from("payment_requests").select("id", { count: "exact", head: true }).eq("status", "pending");
+        setReqCount(rc ?? 0);
+      }
       const { count } = await sb.from("members").select("id", { count: "exact", head: true }).eq("status", "pending");
       setPending(count ?? 0);
     }
@@ -119,10 +150,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const current = tabs.find((t) => (t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href)));
   const groups: { title: string; hrefs: string[] }[] = [
     { title: "ওভারভিউ", hrefs: ["/admin"] },
-    { title: "ব্যবস্থাপনা", hrefs: ["/admin/members", "/admin/chada", "/admin/khoroch"] },
-    { title: "কনটেন্ট", hrefs: ["/admin/events", "/admin/posts"] },
+    { title: "ব্যবস্থাপনা", hrefs: ["/admin/members", "/admin/chada", "/admin/requests", "/admin/khoroch", "/admin/report"] },
+    { title: "কনটেন্ট", hrefs: ["/admin/events", "/admin/posts", "/admin/gallery", "/admin/honors", "/admin/notice"] },
     { title: "সিস্টেম", hrefs: ["/admin/settings"] },
-  ];
+  ]
+    .map((g) => ({ ...g, hrefs: g.hrefs.filter((h) => ACCESS[h]?.includes(role)) }))
+    .filter((g) => g.hrefs.length > 0);
+  const allowed = ACCESS[tabs.find((t) => (t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href)))?.href ?? "/admin"]?.includes(role) ?? true;
 
   return (
     <div className="min-h-screen bg-paper">
@@ -172,6 +206,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <Link key={h} href={h} className={`flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold transition ${active ? "bg-white text-[#12324f] shadow" : "text-white/90 hover:bg-white/10"}`}>
                         <AIcon name={t.icon} />
                         <span className="flex-1">{t.label}</span>
+                        {h === "/admin/requests" && reqCount > 0 && <span className="rounded-full bg-blood px-2 py-0.5 text-xs font-bold text-white">{reqCount}</span>}
                         {h === "/admin/members" && pending > 0 && <span className="rounded-full bg-blood px-2 py-0.5 text-xs font-bold text-white">{pending}</span>}
                       </Link>
                     );
@@ -187,7 +222,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
       </div>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-5 pb-12">{children}</main>
+      <main className="mx-auto w-full max-w-7xl px-4 py-5 pb-12">
+        {allowed ? children : (
+          <div className="card mx-auto max-w-md text-center">
+            <p className="text-xl font-bold">এই পাতায় আপনার অনুমতি নেই</p>
+            <p className="mt-2 text-muted">আপনার ভূমিকা: {role === "treasurer" ? "কোষাধ্যক্ষ (হিসাব)" : "সম্পাদক (কনটেন্ট)"}। প্রধান অ্যাডমিনকে বলুন।</p>
+            <Link href="/admin" className="btn btn-primary mt-4">ড্যাশবোর্ডে যান</Link>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

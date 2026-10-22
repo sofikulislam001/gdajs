@@ -80,3 +80,8 @@ img { max-width: 100%; }
 }
 .btn { min-height: 44px; }
 .btn-sm { min-height: 36px; }
+
+@media print {
+  header, nav, footer, aside, .print\:hidden { display: none !important; }
+  body { background: #fff !important; }
+}

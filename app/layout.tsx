@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LangProvider } from "@/lib/lang";
 import AppShell from "@/components/AppShell";
+import PwaRegister from "@/components/PwaRegister";
 import { ORG_NAME, ORG_SLOGAN } from "@/lib/bn";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: ORG_NAME, template: `%s | ${ORG_NAME}` },
   description: ORG_SLOGAN,
+  appleWebApp: { capable: true, title: "আলোকিত যুব শক্তি", statusBarStyle: "default" },
+  icons: { apple: "/icon-192.png" },
   openGraph: {
     title: ORG_NAME,
     description: ORG_SLOGAN,
@@ -39,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <LangProvider><AppShell>{children}</AppShell></LangProvider>
+        <PwaRegister />
       </body>
     </html>
   );

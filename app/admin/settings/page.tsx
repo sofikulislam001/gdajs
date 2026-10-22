@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { ListSkeleton } from "@/components/Skeleton";
 import { browserClient } from "@/lib/supabase";
 import { errorMessage } from "@/lib/bn";
+import AdminRoles from "@/components/AdminRoles";
 import { SETTING_DEFAULTS, type SiteSettings } from "@/lib/settings";
 
 const FIELDS: { key: keyof SiteSettings; label: string; hint: string; placeholder: string; multiline?: boolean }[] = [
   { key: "contact_phone", label: "সংগঠনের যোগাযোগ নম্বর", hint: "হেল্পলাইন পাতায় সবার জন্য দেখাবে।", placeholder: "01XXXXXXXXX" },
   { key: "payment_note", label: "চাঁদা পাঠানোর নির্দেশনা", hint: "সদস্যের প্রোফাইলে বকেয়ার নিচে দেখাবে। যেমন: বিকাশ/নগদ নম্বর।", placeholder: "বিকাশ (পার্সোনাল): 01XXXXXXXXX — পাঠানোর পর অ্যাডমিনকে জানান", multiline: true },
+  { key: "bkash_number", label: "বিকাশ নম্বর (চাঁদা গ্রহণের)", hint: "সদস্য অনলাইনে চাঁদা জমা দেওয়ার সময় এই নম্বর দেখবে।", placeholder: "01XXXXXXXXX" },
+  { key: "nagad_number", label: "নগদ নম্বর", hint: "ফাঁকা রাখলে নগদ অপশনে নম্বর দেখাবে না।", placeholder: "01XXXXXXXXX" },
+  { key: "rocket_number", label: "রকেট নম্বর", hint: "ঐচ্ছিক।", placeholder: "01XXXXXXXXX" },
   { key: "default_fee", label: "সাধারণ মাসিক চাঁদা (টাকা)", hint: "নতুন সদস্য অনুমোদনের সময় এই অঙ্ক প্রথমে দেখাবে।", placeholder: "100" },
   { key: "fb_page_url", label: "ফেসবুক পেজের লিংক", hint: "সাইটের মেনু ও বোতামে ব্যবহার হবে।", placeholder: "https://www.facebook.com/gajs" },
 ];
@@ -52,7 +56,8 @@ export default function SettingsAdmin() {
   if (!vals) return <ListSkeleton n={3} />;
 
   return (
-    <form onSubmit={save} className="mx-auto max-w-2xl space-y-5">
+    <div className="mx-auto max-w-2xl space-y-5">
+    <form onSubmit={save} className="space-y-5">
       <div>
         <h1 className="text-2xl">সাইট সেটিংস</h1>
         <p className="text-muted">সাইটের গুরুত্বপূর্ণ তথ্য এখান থেকেই বদলান। কোনো কোড বা ফাইল ছোঁয়ার দরকার নেই।</p>
@@ -83,5 +88,7 @@ export default function SettingsAdmin() {
       {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 font-medium">{msg}</p>}
       <button disabled={busy} className="btn btn-primary w-full py-3 text-lg">{busy ? "সংরক্ষণ হচ্ছে…" : "সংরক্ষণ করুন"}</button>
     </form>
+    <AdminRoles />
+    </div>
   );
 }

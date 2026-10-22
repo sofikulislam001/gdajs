@@ -3,6 +3,7 @@
 import { ListSkeleton } from "@/components/Skeleton";
 import { useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
+import BloodRequests from "@/components/BloodRequests";
 import SetupNotice from "@/components/SetupNotice";
 import { browserClient, isConfigured } from "@/lib/supabase";
 import { BLOOD_GROUPS, errorMessage, fmtDate } from "@/lib/bn";
@@ -42,6 +43,7 @@ export default function BloodPage() {
 
   return (
     <div>
+      <BloodRequests />
       <h1 className="mb-1 text-3xl">রক্তদাতা তালিকা</h1>
       <p className="mb-5 text-muted">
         রক্তের প্রয়োজনে গ্রুপ বেছে নিন। শেষ রক্তদানের ৪ মাস পার হলে দাতাকে &ldquo;প্রস্তুত&rdquo; দেখানো হয়।

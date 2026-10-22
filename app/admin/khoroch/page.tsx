@@ -4,19 +4,22 @@ import { ListSkeleton } from "@/components/Skeleton";
 import { useCallback, useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { en, errorMessage, fmtDate, taka } from "@/lib/bn";
-import type { Donation, Expense } from "@/lib/types";
+import type { Donation, EventRow, Expense } from "@/lib/types";
 
 export default function KhorochAdmin() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [events, setEvents] = useState<Pick<EventRow, "id" | "title">[]>([]);
   const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
     const sb = browserClient();
-    const [e, d] = await Promise.all([
+    const [e, d, ev] = await Promise.all([
       sb.from("expenses").select("*").order("spent_on", { ascending: false }).limit(100),
       sb.from("donations").select("*").order("received_on", { ascending: false }).limit(100),
+      sb.from("events").select("id,title").eq("kind", "event").order("event_date", { ascending: false }).limit(50),
     ]);
+    setEvents((ev.data as Pick<EventRow, "id" | "title">[]) ?? []);
     if (e.error || d.error) setMsg(errorMessage(e.error ?? d.error));
     setExpenses((e.data as Expense[]) ?? []);
     setDonations((d.data as Donation[]) ?? []);
@@ -37,6 +40,7 @@ export default function KhorochAdmin() {
       amount,
       spent_on: String(f.get("date") ?? "") || undefined,
       category: String(f.get("category") ?? "").trim() || null,
+      event_id: String(f.get("event_id") ?? "") || null,
     });
     if (error) return setMsg(errorMessage(error));
     form.reset();
@@ -55,6 +59,7 @@ export default function KhorochAdmin() {
       amount,
       received_on: String(f.get("date") ?? "") || undefined,
       purpose: String(f.get("purpose") ?? "").trim() || null,
+      event_id: String(f.get("event_id") ?? "") || null,
     });
     if (error) return setMsg(errorMessage(error));
     form.reset();
@@ -88,6 +93,10 @@ export default function KhorochAdmin() {
               <input name="date" type="date" className="input" />
             </div>
             <input name="category" placeholder="ধরন (ঐচ্ছিক)" className="input" />
+            <select name="event_id" className="input" defaultValue="">
+              <option value="">কোনো নির্দিষ্ট কার্যক্রমের নয়</option>
+              {events.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+            </select>
             <button className="btn btn-primary">খরচ সংরক্ষণ</button>
           </form>
           <div className="card divide-y divide-line p-0">
@@ -111,6 +120,10 @@ export default function KhorochAdmin() {
               <input name="date" type="date" className="input" />
             </div>
             <input name="purpose" placeholder="কোন উদ্দেশ্যে (ঐচ্ছিক)" className="input" />
+            <select name="event_id" className="input" defaultValue="">
+              <option value="">কোনো নির্দিষ্ট কার্যক্রমের নয়</option>
+              {events.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+            </select>
             <button className="btn btn-primary">অনুদান সংরক্ষণ</button>
           </form>
           <div className="card divide-y divide-line p-0">

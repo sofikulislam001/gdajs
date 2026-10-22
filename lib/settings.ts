@@ -5,6 +5,9 @@ export type SiteSettings = {
   payment_note: string;
   fb_page_url: string;
   default_fee: string;
+  bkash_number: string;
+  nagad_number: string;
+  rocket_number: string;
   dev_name: string;
   dev_profession: string;
   dev_facebook: string;
@@ -19,6 +22,9 @@ export const SETTING_DEFAULTS: SiteSettings = {
   payment_note: "",
   fb_page_url: "https://www.facebook.com/gajs",
   default_fee: "100",
+  bkash_number: "",
+  nagad_number: "",
+  rocket_number: "",
   dev_name: "MD SOFIKUL ISLAM",
   dev_profession: "Web Developer",
   dev_facebook: "",

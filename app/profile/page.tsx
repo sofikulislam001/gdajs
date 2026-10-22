@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import ImageUpload from "@/components/ImageUpload";
 import MembershipCard, { memberNo } from "@/components/MembershipCard";
+import PayForm from "@/components/PayForm";
 import SetupNotice from "@/components/SetupNotice";
 import { ListSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/lib/auth";
@@ -51,6 +52,7 @@ function ProfileInner() {
   const [payNote, setPayNote] = useState("");
   const [tab, setTab] = useState<Tab>(() => {
     const t = params.get("tab");
+    if (t === "dues") return "chada";
     return t === "chada" || t === "card" || t === "security" ? t : "info";
   });
 
@@ -140,6 +142,7 @@ function ProfileInner() {
         blood_group: t("blood_group"),
         last_blood_donation: t("last_blood_donation"),
         show_in_blood_list: f.get("show_in_blood_list") === "on",
+        hide_public: f.get("hide_public") === "on",
         about: t("about"),
       })
       .eq("id", m.id);
@@ -275,6 +278,10 @@ function ProfileInner() {
             <input type="checkbox" name="show_in_blood_list" defaultChecked={m.show_in_blood_list} className="mt-1 h-5 w-5 accent-[#3f86bd]" />
             <span>{tr("জরুরি প্রয়োজনে রক্তদাতা তালিকায় আমার নাম ও ফোন নম্বর দেখানো যেতে পারে।", "My name and phone may be shown in the blood-donor list for emergencies.")}</span>
           </label>
+          <label className="flex items-start gap-3 rounded-2xl bg-paper p-3 text-sm">
+            <input type="checkbox" name="hide_public" defaultChecked={!!m.hide_public} className="mt-1 h-5 w-5 accent-[#3f86bd]" />
+            <span>{tr("“সেরা সদস্য” ও নিয়মিত চাঁদাদাতার সম্মাননা তালিকায় আমার নাম দেখাবেন না।", "Do not show my name in the honors and regular-payers lists.")}</span>
+          </label>
           <div><label className="label" htmlFor="about">{tr("আমার সম্পর্কে (ঐচ্ছিক)", "About me (optional)")}</label><textarea id="about" name="about" rows={3} defaultValue={m.about ?? ""} className="input" /></div>
           <div className="flex gap-2">
             <button disabled={saving} className="btn btn-primary flex-1 py-3 text-lg">{saving ? tr("সংরক্ষণ হচ্ছে…", "Saving…") : tr("সংরক্ষণ করুন", "Save")}</button>
@@ -300,6 +307,7 @@ function ProfileInner() {
             ) : (
               payNote && <p className="rounded-2xl bg-paper p-3 text-sm">{payNote}</p>
             )}
+            <PayForm m={m} payments={payments} />
             <div>
               <p className="label">{tr("গত ১২ মাস", "Last 12 months")}</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

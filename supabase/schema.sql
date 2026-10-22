@@ -313,3 +313,14 @@ create policy "member update own avatar" on storage.objects for update to authen
   using (bucket_id = 'media' and (storage.foldername(name))[1] = 'avatars' and (storage.foldername(name))[2] = auth.uid()::text);
 create policy "member delete own avatar" on storage.objects for delete to authenticated
   using (bucket_id = 'media' and (storage.foldername(name))[1] = 'avatars' and (storage.foldername(name))[2] = auth.uid()::text);
+
+-- ---------------------------------------------------------------
+-- NOTE (v2 features): the live database also contains objects created via
+-- migrations that are not mirrored above: payment_requests (+ approve/reject
+-- RPCs), blood_requests (+ guard trigger), gallery_photos, honors,
+-- event_attendance, donations.event_id / expenses.event_id, members.hide_public,
+-- admins.role with admin_role()/has_role(), admin_broadcast(),
+-- admin_send_due_reminders(), run_due_reminders() + pg_cron job on the 5th,
+-- admin_list_admins()/admin_set_admin()/admin_remove_admin(),
+-- get_honors()/get_regular_payers(). See the Supabase migration history.
+-- ---------------------------------------------------------------

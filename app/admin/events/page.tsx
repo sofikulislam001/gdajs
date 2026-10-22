@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import EventImage from "@/components/EventImage";
+import EventTools from "@/components/EventTools";
 import ImageUpload from "@/components/ImageUpload";
 import { ListSkeleton } from "@/components/Skeleton";
 import { browserClient } from "@/lib/supabase";
@@ -92,6 +93,7 @@ export default function EventsAdmin() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
+  const [tools, setTools] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await browserClient().from("events").select("*").order("event_date", { ascending: false });
@@ -153,10 +155,12 @@ export default function EventsAdmin() {
                   <button onClick={() => setEditing(e.id)} className="btn btn-primary btn-sm">সম্পাদনা</button>
                   <a href={`/events/${e.id}`} target="_blank" className="btn btn-ghost btn-sm">দেখুন</a>
                   <a href={`https://wa.me/?text=${encodeURIComponent(`${e.title}\n${url}`)}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">হোয়াটসঅ্যাপ</a>
+                  {e.kind === "event" && <button onClick={() => setTools(tools === e.id ? null : e.id)} className="btn btn-accent btn-sm">উপস্থিতি ও তহবিল</button>}
                   <button onClick={() => togglePublish(e)} className="btn btn-ghost btn-sm">{e.published ? "লুকান" : "প্রকাশ করুন"}</button>
                   <button onClick={() => del(e)} className="btn btn-danger btn-sm">মুছুন</button>
                 </div>
               )}
+              {tools === e.id && <EventTools eventId={e.id} title={e.title} />}
             </div>
           );
         })}
