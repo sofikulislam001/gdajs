@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BLOOD_GROUPS, bn, en, errorMessage, fmtDate, isValidPhone, normalizePhone } from "@/lib/bn";
+import { BLOOD_GROUPS, en, errorMessage, fmtDate, isValidPhone, normalizePhone } from "@/lib/bn";
 import { useLang } from "@/lib/lang";
 import { browserClient } from "@/lib/supabase";
 import type { BloodRequest } from "@/lib/types";
@@ -91,7 +91,7 @@ export default function BloodRequests() {
                 <p className="text-sm text-muted">{[r.patient_name, r.needed_on ? `${tr("প্রয়োজন", "Needed")}: ${fmtDate(r.needed_on)}` : null].filter(Boolean).join(" • ")}</p>
                 {r.note && <p className="text-sm">{r.note}</p>}
               </div>
-              <a href={`tel:${r.phone}`} className="btn btn-primary btn-sm shrink-0">{tr("কল", "Call")} {bn(r.phone.slice(-4))}</a>
+              <a href={`tel:${r.phone}`} className="btn btn-primary btn-sm shrink-0">{tr("কল করুন", "Call")}</a>
             </div>
           ))}
         </div>

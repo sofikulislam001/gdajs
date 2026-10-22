@@ -130,29 +130,23 @@ export default function ChadaAdmin() {
         {tab === "unpaid" && unpaid.length > 0 && <button onClick={copyList} className="btn btn-accent btn-sm">বকেয়া তালিকা কপি</button>}
       </div>
 
-      <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[560px]">
-          <thead className="border-b border-line bg-paper">
-            <tr><th className="th">সদস্য</th><th className="th">এই মাসের চাঁদা</th><th className="th">মোট বকেয়া</th><th className="th" /></tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {list.length === 0 && <tr><td className="td text-muted" colSpan={4}>{tab === "unpaid" ? "সবাই পরিশোধ করেছেন 🎉" : "এখনো কেউ পরিশোধ করেননি"}</td></tr>}
-            {list.map(({ m, paid: p, due }) => (
-              <tr key={m.id}>
-                <td className="td"><div className="flex items-center gap-3"><Avatar src={m.photo_url} name={m.name} size={38} /><div><p className="font-medium">{m.name}</p><p className="text-xs text-muted">{bn(m.phone)}</p></div></div></td>
-                <td className="td whitespace-nowrap">{taka(m.monthly_fee)}{p && <span className="ml-2 text-xs text-muted">{p.method}</span>}</td>
-                <td className="td whitespace-nowrap">{due.due > 0 ? <span className="font-semibold text-blood">{taka(due.amount)} <span className="text-xs font-normal">({bn(due.due)} মাস)</span></span> : <span className="text-brand">নেই</span>}</td>
-                <td className="td">
-                  <div className="flex justify-end gap-1.5">
-                    {!p && <button onClick={() => markPaid(m)} className="btn btn-primary btn-sm">পেয়েছি</button>}
-                    {!p && <a href={waLink(m.phone, reminderText(m, due.due, due.amount))} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">রিমাইন্ডার</a>}
-                    {p && <button onClick={() => undo(p)} className="btn btn-ghost btn-sm">বাতিল</button>}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="card divide-y divide-line p-0">
+        {list.length === 0 && <p className="p-4 text-muted">{tab === "unpaid" ? "সবাই পরিশোধ করেছেন 🎉" : "এখনো কেউ পরিশোধ করেননি"}</p>}
+        {list.map(({ m, paid: p, due }) => (
+          <div key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+            <Avatar src={m.photo_url} name={m.name} size={40} />
+            <div className="min-w-0 flex-1 basis-40">
+              <p className="truncate font-semibold">{m.name}</p>
+              <p className="text-xs text-muted">{bn(m.phone)} • {taka(m.monthly_fee)}{p ? ` • ${p.method}` : ""}</p>
+              <p className="text-sm">{due.due > 0 ? <span className="font-semibold text-blood">বকেয়া {taka(due.amount)} <span className="text-xs font-normal">({bn(due.due)} মাস)</span></span> : <span className="text-brand">বকেয়া নেই</span>}</p>
+            </div>
+            <div className="flex shrink-0 gap-1.5">
+              {!p && <button onClick={() => markPaid(m)} className="btn btn-primary btn-sm">পেয়েছি</button>}
+              {!p && <a href={waLink(m.phone, reminderText(m, due.due, due.amount))} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">রিমাইন্ডার</a>}
+              {p && <button onClick={() => undo(p)} className="btn btn-ghost btn-sm">বাতিল</button>}
+            </div>
+          </div>
+        ))}
       </div>
       <p className="text-sm text-muted">&ldquo;রিমাইন্ডার&rdquo; চাপলে হোয়াটসঅ্যাপে সদস্যের নামে লেখা মেসেজ তৈরি হয়ে খুলবে, আপনি শুধু Send চাপবেন।</p>
     </div>

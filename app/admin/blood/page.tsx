@@ -18,13 +18,15 @@ export default function BloodAdmin() {
   const [tab, setTab] = useState<"donors" | "requests">("donors");
   const [group, setGroup] = useState("");
   const [ready, setReady] = useState(false);
+  const [all, setAll] = useState(false);
+  const [edit, setEdit] = useState<Member | null>(null);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
     const sb = browserClient();
     const [m, r] = await Promise.all([
-      sb.from("members").select("*").eq("status", "active").not("blood_group", "is", null).order("name"),
+      sb.from("members").select("*").eq("status", "active").order("name"),
       sb.from("blood_requests").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     if (m.error) setMsg(errorMessage(m.error));
@@ -39,13 +41,21 @@ export default function BloodAdmin() {
   const donors = useMemo(() => {
     const n = q.trim().toLowerCase();
     return (members ?? [])
-      .filter((m) => (!group || m.blood_group === group) && (!ready || (daysSince(m.last_blood_donation) ?? 999) >= 90) && (!n || m.name.toLowerCase().includes(n) || m.phone.includes(n)));
-  }, [members, group, ready, q]);
+      .filter((m) => (all || !!m.blood_group) && (!group || m.blood_group === group) && (!ready || (daysSince(m.last_blood_donation) ?? 999) >= 90) && (!n || m.name.toLowerCase().includes(n) || m.phone.includes(n)));
+  }, [members, group, ready, q, all]);
 
   async function donated(m: Member) {
     if (!window.confirm(`${m.name} আজ রক্ত দিয়েছেন বলে লিখবেন? পরের ৯০ দিন "প্রস্তুত" দেখাবে না।`)) return;
     const { error } = await browserClient().rpc("admin_mark_donated", { p_member: m.id });
     setMsg(error ? errorMessage(error) : "রক্তদানের তারিখ হালনাগাদ হয়েছে ✅");
+    await load();
+  }
+
+  async function saveDonor(m: Member, bg: string, last: string, show: boolean) {
+    const { error } = await browserClient().rpc("admin_update_donor", { p_member: m.id, p_blood_group: bg || null, p_last: last || null, p_show: show });
+    if (error) return setMsg(errorMessage(error));
+    setMsg("দাতার তথ্য সংরক্ষিত হয়েছে ✅");
+    setEdit(null);
     await load();
   }
 
@@ -93,6 +103,7 @@ export default function BloodAdmin() {
           <div className="flex flex-wrap items-center gap-3">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম বা নম্বর খুঁজুন" className="input w-full sm:w-64" />
             <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={ready} onChange={(e) => setReady(e.target.checked)} className="h-5 w-5 accent-[#3f86bd]" /> শুধু রক্তদানে প্রস্তুত</label>
+            <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="h-5 w-5 accent-[#3f86bd]" /> রক্তের গ্রুপ নেই এমন সদস্যও দেখান</label>
             {group && <button onClick={() => setGroup("")} className="btn btn-ghost btn-sm">ফিল্টার {group} ✕</button>}
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
@@ -108,7 +119,7 @@ export default function BloodAdmin() {
                       <p className="truncate font-bold">{m.name}</p>
                       <p className="truncate text-xs text-muted">{bn(m.phone)}{m.address ? ` • ${m.address}` : ""}</p>
                     </div>
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blood text-lg font-extrabold text-white">{m.blood_group}</span>
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg font-extrabold text-white ${m.blood_group ? "bg-blood" : "bg-line !text-muted"}`}>{m.blood_group ?? "?"}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 text-xs">
                     <span className={`badge ${ok ? "bg-brand-soft text-brand-dark" : "bg-accent-soft text-[#8a5a00]"}`}>{ok ? "প্রস্তুত" : `আরও ${bn(90 - (d ?? 0))} দিন পর`}</span>
@@ -119,12 +130,40 @@ export default function BloodAdmin() {
                     <a href={`tel:${m.phone}`} className="btn btn-primary btn-sm">কল</a>
                     <a target="_blank" rel="noopener noreferrer" href={waLink(m.phone, `আসসালামু আলাইকুম ${m.name}, গোদনাইল আলোকিত যুব শক্তির পক্ষ থেকে জানাচ্ছি, জরুরি ${m.blood_group} রক্তের প্রয়োজন। আপনি কি সাহায্য করতে পারবেন?`)} className="btn btn-ghost btn-sm">হোয়াটসঅ্যাপ</a>
                     <button onClick={() => donated(m)} className="btn btn-accent btn-sm">আজ রক্ত দিয়েছেন</button>
+                    <button onClick={() => setEdit(m)} className="btn btn-ghost btn-sm">তথ্য বদলান</button>
+                    <button onClick={() => saveDonor(m, m.blood_group ?? "", m.last_blood_donation ?? "", !m.show_in_blood_list)} className={`btn btn-sm ${m.show_in_blood_list ? "btn-danger" : "btn-primary"}`}>{m.show_in_blood_list ? "তালিকা থেকে সরান" : "তালিকায় যোগ করুন"}</button>
                   </div>
                 </div>
               );
             })}
           </div>
         </>
+      )}
+
+      {edit && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 sm:items-center" onClick={() => setEdit(null)}>
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              void saveDonor(edit, String(f.get("bg") ?? ""), String(f.get("last") ?? ""), f.get("show") === "on");
+            }}
+            className="w-full max-w-md space-y-3 rounded-3xl bg-white p-5"
+          >
+            <h2 className="text-lg">{edit.name} — দাতার তথ্য</h2>
+            <div>
+              <label className="label" htmlFor="bg">রক্তের গ্রুপ</label>
+              <select id="bg" name="bg" defaultValue={edit.blood_group ?? ""} className="input"><option value="">নেই / জানা নেই</option>{BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}</select>
+            </div>
+            <div>
+              <label className="label" htmlFor="last">শেষ রক্তদানের তারিখ</label>
+              <input id="last" name="last" type="date" defaultValue={edit.last_blood_donation ?? ""} className="input" />
+            </div>
+            <label className="flex items-start gap-3 rounded-2xl bg-brand-soft p-3 text-sm"><input type="checkbox" name="show" defaultChecked={edit.show_in_blood_list} className="mt-1 h-5 w-5 accent-[#3f86bd]" /><span>পাবলিক রক্তদাতা তালিকায় নাম ও ফোন নম্বর দেখানো হোক</span></label>
+            <div className="flex gap-2"><button className="btn btn-primary flex-1">সংরক্ষণ</button><button type="button" onClick={() => setEdit(null)} className="btn btn-ghost">বাতিল</button></div>
+          </form>
+        </div>
       )}
 
       {tab === "requests" && (

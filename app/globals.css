@@ -72,7 +72,7 @@ html { scroll-behavior: smooth; }
 @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 main { animation: page-in 0.25s ease-out; }
 a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-input, select, textarea { font-size: 16px; }
+input, select, textarea { font-size: 16px; min-width: 0; max-width: 100%; }
 img { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -84,4 +84,13 @@ img { max-width: 100%; }
 @media print {
   header, nav, footer, aside, .print\:hidden { display: none !important; }
   body { background: #fff !important; }
+}
+
+/* ইনস্টল করা অ্যাপ মোড: অ্যাপের মতো স্থির, জুম ও টেক্সট-সিলেকশন বন্ধ */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  html { touch-action: pan-x pan-y; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; padding-top: env(safe-area-inset-top); }
+  input, textarea, select, .select-all, [contenteditable] { -webkit-user-select: text; user-select: text; }
+  img { -webkit-user-drag: none; }
 }

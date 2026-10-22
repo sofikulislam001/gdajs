@@ -59,9 +59,9 @@ export default function ReportAdmin() {
           <h1 className="text-2xl">মাসিক রিপোর্ট</h1>
           <p className="text-muted">মাস বেছে নিয়ে প্রিন্ট করুন বা &ldquo;PDF হিসেবে সেভ&rdquo; করুন।</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 sm:w-auto">
           <input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="input" />
-          <button onClick={() => window.print()} disabled={!ready} className="btn btn-primary">প্রিন্ট / PDF</button>
+          <button onClick={() => window.print()} disabled={!ready} className="btn btn-primary shrink-0 whitespace-nowrap">প্রিন্ট / PDF</button>
         </div>
       </div>
 

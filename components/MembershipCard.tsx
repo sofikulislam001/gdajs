@@ -61,7 +61,7 @@ export default function MembershipCard({ m }: { m: Member }) {
           ) : (
             <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-white bg-brand text-3xl font-bold text-white shadow">{m.name.slice(0, 1)}</div>
           )}
-          <div className="min-w-0 flex-1 pt-2">
+          <div className="min-w-0 flex-1 pt-12">
             <p className="truncate text-xl font-bold leading-tight">{m.name}</p>
             <span className="mt-0.5 inline-block rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand-dark">
               {m.status === "active" ? tr("সক্রিয় সদস্য", "Active member") : m.status === "pending" ? tr("অপেক্ষমাণ", "Pending") : tr("নিষ্ক্রিয়", "Inactive")}

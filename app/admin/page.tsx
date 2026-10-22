@@ -10,6 +10,8 @@ import { bn, currentMonthKey, errorMessage, fmtDate, fmtMonth, monthStart, taka,
 import { dueFor } from "@/lib/dues";
 import type { Expense, Member, Payment } from "@/lib/types";
 
+type Analytics = { online_now: number; online_app: number; today: number; week: number; total: number; app_users: number; installed: number; visits: number };
+
 function lastMonths(n: number): string[] {
   const [y, m] = currentMonthKey().split("-").map(Number);
   return Array.from({ length: n }, (_, i) => {
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [demoCount, setDemoCount] = useState(0);
   const [msg, setMsg] = useState("");
+  const [an, setAn] = useState<Analytics | null>(null);
 
   const load = useCallback(async () => {
     const sb = browserClient();
@@ -59,6 +62,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const get = () => browserClient().rpc("admin_analytics").then(({ data }) => { if (data) setAn(data as Analytics); }, () => {});
+    void get();
+    const t = window.setInterval(get, 30000);
+    return () => window.clearInterval(t);
+  }, []);
 
   async function clearDemo() {
     if (!window.confirm("সব ডেমো সদস্য, চাঁদা, খরচ, অনুদান ও ডেমো পোস্ট মুছে ফেলবেন? আপনার নিজের যোগ করা তথ্য মুছবে না।")) return;
@@ -124,6 +134,22 @@ export default function AdminDashboard() {
 
       {msg && <p className="rounded-2xl bg-accent-soft px-4 py-2.5 font-medium">{msg}</p>}
 
+      {an && (
+        <section className="card space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-lg"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" /><span className="relative inline-flex h-3 w-3 rounded-full bg-brand" /></span> সাইট ও অ্যাপ ব্যবহার</h2>
+            <span className="text-xs text-muted">প্রতি ৩০ সেকেন্ডে হালনাগাদ</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+            <div className="rounded-2xl bg-brand-soft p-3"><p className="text-2xl font-extrabold text-brand">{bn(an.online_now)}</p><p className="text-xs text-muted">এখন অনলাইনে</p><p className="text-[11px] text-muted">অ্যাপে {bn(an.online_app)} জন</p></div>
+            <div className="rounded-2xl bg-paper p-3 ring-1 ring-line"><p className="text-2xl font-extrabold">{bn(an.today)}</p><p className="text-xs text-muted">আজ এসেছেন</p><p className="text-[11px] text-muted">৭ দিনে {bn(an.week)} জন</p></div>
+            <div className="rounded-2xl bg-accent-soft p-3"><p className="text-2xl font-extrabold">{bn(an.installed)}</p><p className="text-xs text-muted">অ্যাপ ইনস্টল</p><p className="text-[11px] text-muted">অ্যাপ থেকে ঢুকেছেন {bn(an.app_users)} জন</p></div>
+            <div className="rounded-2xl bg-paper p-3 ring-1 ring-line"><p className="text-2xl font-extrabold">{bn(an.total)}</p><p className="text-xs text-muted">মোট ভিজিটর</p><p className="text-[11px] text-muted">মোট ভিজিট {bn(an.visits)}</p></div>
+          </div>
+          <p className="text-xs text-muted">গণনা ডিভাইস ভিত্তিক ও নামহীন। কেউ ব্রাউজার ডেটা মুছলে বা আলাদা ব্রাউজার ব্যবহার করলে আলাদা ভিজিটর ধরা হয়।</p>
+        </section>
+      )}
+
       {data.pending.length > 0 && (
         <section className="card border-accent bg-accent-soft/60 p-0">
           <div className="flex items-center justify-between gap-2 px-5 pt-4">
@@ -164,7 +190,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex h-44 items-end gap-3" role="img" aria-label="মাসভিত্তিক চাঁদার বার চার্ট">
             {data.months.map((x) => (
-              <div key={x.k} className="flex flex-1 flex-col items-center gap-1">
+              <div key={x.k} className="flex h-full flex-1 flex-col items-center gap-1">
                 <span className="text-[11px] font-semibold text-muted">{x.collected ? taka(x.collected) : ""}</span>
                 <div className="relative flex w-full flex-1 items-end justify-center rounded-xl bg-paper">
                   <div className="absolute bottom-0 w-full rounded-xl bg-line" style={{ height: `${(x.target / maxBar) * 100}%` }} />

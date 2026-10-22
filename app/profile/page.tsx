@@ -184,7 +184,7 @@ function ProfileInner() {
       <section className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_6px_24px_rgba(40,80,120,0.1)]">
         <div className="relative h-28 sm:h-40">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover" />
+          <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover object-[50%_88%]" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/70 to-transparent" />
         </div>
         <div className="relative z-10 -mt-14 flex flex-col items-center gap-1.5 px-4 pb-6 text-center">

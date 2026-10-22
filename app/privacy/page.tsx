@@ -17,8 +17,8 @@ const SECTIONS: { bn: [string, string]; en: [string, string] }[] = [
     en: ["3. Who can see what", "Your full details are visible only to you and the organisation's admins. Your name and phone appear in the blood-donor list only if you allow it in your profile, and you can turn this off at any time. Visitors to the transparent-accounts page only see overall income and expense figures. Your name and photo may appear on the Honors page as a top or regular member; you can turn this off in your profile edit screen. The phone number given in an urgent blood request is visible to everyone."],
   },
   {
-    bn: ["৪. তথ্য সংরক্ষণ ও নিরাপত্তা", "আপনার তথ্য নিরাপদ ক্লাউড ডাটাবেসে সংরক্ষিত থাকে এবং প্রবেশাধিকার কঠোরভাবে নিয়ন্ত্রিত। পাসওয়ার্ড এনক্রিপ্টেড অবস্থায় থাকে, কেউ তা দেখতে পারে না। নিজের পাসওয়ার্ড গোপন রাখুন এবং কারও সাথে শেয়ার করবেন না।"],
-    en: ["4. Storage and security", "Your data is stored in a secure cloud database with strictly controlled access. Passwords are stored encrypted and nobody can read them. Please keep your password private and do not share it."],
+    bn: ["৪. তথ্য সংরক্ষণ ও নিরাপত্তা", "সাইট ও অ্যাপ কতজন ব্যবহার করছেন তা জানতে ডিভাইস ভিত্তিক একটি নামহীন র‍্যান্ডম আইডি গণনা করা হয়; এতে আপনার নাম বা অন্য ব্যক্তিগত তথ্য থাকে না। আপনার তথ্য নিরাপদ ক্লাউড ডাটাবেসে সংরক্ষিত থাকে এবং প্রবেশাধিকার কঠোরভাবে নিয়ন্ত্রিত। পাসওয়ার্ড এনক্রিপ্টেড অবস্থায় থাকে, কেউ তা দেখতে পারে না। নিজের পাসওয়ার্ড গোপন রাখুন এবং কারও সাথে শেয়ার করবেন না।"],
+    en: ["4. Storage and security", "To count how many people use the site and app, an anonymous random per-device ID is counted; it holds no name or personal data. Your data is stored in a secure cloud database with strictly controlled access. Passwords are stored encrypted and nobody can read them. Please keep your password private and do not share it."],
   },
   {
     bn: ["৫. তৃতীয় পক্ষের সাথে শেয়ার", "আইনি বাধ্যবাধকতা ছাড়া আপনার ব্যক্তিগত তথ্য কোনো তৃতীয় পক্ষকে দেওয়া হয় না। ফেসবুক লিংক ক্লিক করলে আপনি ফেসবুকের নিজস্ব নীতির আওতায় যান।"],
