@@ -14,6 +14,7 @@ export default function NoticeAdmin() {
   const [msg, setMsg] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [pushUsers, setPushUsers] = useState<number | null>(null);
   const key = currentMonthKey();
 
   useEffect(() => {
@@ -22,6 +23,10 @@ export default function NoticeAdmin() {
       setMembers((m.data as Member[]) ?? []);
       setPayments((p.data as Payment[]) ?? []);
     });
+  }, []);
+
+  useEffect(() => {
+    browserClient().rpc("admin_push_count").then(({ data }) => setPushUsers(typeof data === "number" ? data : null), () => {});
   }, []);
 
   async function send(ev: React.FormEvent) {
@@ -63,7 +68,7 @@ export default function NoticeAdmin() {
         <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={600} placeholder="বিস্তারিত লিখুন" className="input" />
         <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="লিংক (ঐচ্ছিক, যেমন /events)" className="input" />
         <button disabled={busy === "send"} className="btn btn-primary w-full py-3">{busy === "send" ? "পাঠানো হচ্ছে…" : "সব সক্রিয় সদস্যকে পাঠান"}</button>
-        <p className="text-xs text-muted">সদস্যরা অ্যাপের ঘণ্টা (🔔) আইকনে এটি দেখবেন। মোবাইলের লক-স্ক্রিনে পুশ নোটিফিকেশন যায় না।</p>
+        <p className="text-xs text-muted">সদস্যরা অ্যাপের ঘণ্টা (🔔) আইকনে এটি দেখবেন। যাঁরা সেটিংসে "ফোনে পুশ নোটিফিকেশন" চালু করেছেন, তাঁদের ফোনের স্ক্রিনেও আসবে।{pushUsers !== null && <> এখন পুশ চালু আছে <b>{bn(pushUsers)} জন</b> সদস্যের।</>}</p>
       </form>
 
       <div className="card space-y-3">

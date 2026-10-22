@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import InstallApp from "@/components/InstallApp";
+import PushToggle from "@/components/PushToggle";
 import { FB_PAGE_URL } from "@/lib/brand";
 import { getTextSize, setTextSize, useLang } from "@/lib/lang";
 import { useAuth } from "@/lib/auth";
@@ -83,6 +84,7 @@ export default function SettingsPage() {
 
       <Group title={tr("অ্যাপ", "App")}>
         <InstallApp />
+        <PushToggle />
         <Row href="/gallery" title={tr("ফটো গ্যালারি", "Photo gallery")} />
         <Row href="/honors" title={tr("সম্মাননা", "Honors")} />
       </Group>
