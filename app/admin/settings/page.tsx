@@ -20,6 +20,7 @@ const DEV_FIELDS: { key: keyof SiteSettings; label: string; placeholder: string 
   { key: "dev_facebook", label: "ফেসবুক প্রোফাইল লিংক", placeholder: "https://www.facebook.com/..." },
   { key: "dev_github", label: "GitHub লিংক", placeholder: "https://github.com/..." },
   { key: "dev_whatsapp", label: "হোয়াটসঅ্যাপ নম্বর", placeholder: "01XXXXXXXXX" },
+  { key: "dev_about", label: "নিজের সম্পর্কে ২-৩ লাইন (ডেভেলপার পাতায় দেখাবে)", placeholder: "যেমন: ওয়েব ও অ্যাপ ডেভেলপার..." },
 ];
 
 export default function SettingsAdmin() {

@@ -49,19 +49,19 @@ export default function MembershipCard({ m }: { m: Member }) {
           <div className="relative flex items-center gap-3">
             <span className="rounded-full bg-white p-0.5"><Logo size={44} /></span>
             <div className="min-w-0">
-              <p className="text-xs uppercase tracking-widest text-white/70">{tr("সদস্যপদ রসিদ", "Membership receipt")}</p>
+              <p className="text-xs uppercase text-white/70">{tr("সদস্যপদ রসিদ", "Membership receipt")}</p>
               <p className="font-bold leading-tight">{tr(ORG_NAME, "Godnail Alokito Jubo Shakti")}</p>
             </div>
           </div>
         </div>
-        <div className="-mt-9 flex items-end gap-3 px-5">
+        <div className="relative -mt-9 flex items-start gap-3 px-5">
           {m.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={m.photo_url} alt="" crossOrigin="anonymous" className="h-20 w-20 shrink-0 rounded-2xl border-4 border-white object-cover shadow" />
+            <img src={m.photo_url} alt="" crossOrigin="anonymous" className="relative h-20 w-20 shrink-0 rounded-2xl border-4 border-white object-cover shadow" />
           ) : (
             <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-4 border-white bg-brand text-3xl font-bold text-white shadow">{m.name.slice(0, 1)}</div>
           )}
-          <div className="min-w-0 pb-1">
+          <div className="min-w-0 flex-1 pt-2">
             <p className="truncate text-xl font-bold leading-tight">{m.name}</p>
             <span className="mt-0.5 inline-block rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand-dark">
               {m.status === "active" ? tr("সক্রিয় সদস্য", "Active member") : m.status === "pending" ? tr("অপেক্ষমাণ", "Pending") : tr("নিষ্ক্রিয়", "Inactive")}

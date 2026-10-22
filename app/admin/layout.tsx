@@ -163,7 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav className="flex-1 space-y-4 px-3 py-2">
             {groups.map((g) => (
               <div key={g.title}>
-                <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest text-white/50">{g.title}</p>
+                <p className="mb-1 px-3 text-[11px] font-semibold uppercase text-white/50">{g.title}</p>
                 <div className="space-y-0.5">
                   {g.hrefs.map((h) => {
                     const t = tabs.find((x) => x.href === h)!;

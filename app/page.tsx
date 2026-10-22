@@ -49,25 +49,35 @@ export default async function Home() {
   return (
     <div>
       <section className="relative overflow-hidden bg-gradient-to-b from-[#6aa8d8] to-[#8fc0e6] pb-10 text-white">
-        <div className="container-x pt-5">
-          <div className="flex items-center gap-3">
-            <Logo size={56} />
-            <div className="min-w-0">
-              <p className="text-sm text-white/90">{today}</p>
-              <h1 className="text-2xl leading-tight drop-shadow sm:text-3xl"><T bn={ORG_NAME} en="Godnail Alokito Jubo Shakti" /></h1>
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
+        <div className="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-accent/15" />
+        <div className="container-x relative grid items-center gap-6 pt-5 md:grid-cols-[1.05fr_1fr] md:gap-10 md:pt-10 md:pb-4">
+          <div className="md:order-1">
+            <div className="flex items-center gap-3">
+              <Logo size={56} />
+              <div className="min-w-0">
+                <p className="text-sm text-white/90">{today}</p>
+                <h1 className="text-2xl leading-tight drop-shadow sm:text-3xl md:text-4xl"><T bn={ORG_NAME} en="Godnail Alokito Jubo Shakti" /></h1>
+              </div>
             </div>
+            <p className="mt-3 max-w-xl text-white/95 md:text-lg"><T bn={ORG_SLOGAN} en="A volunteer, non-political youth organisation devoted to serving humanity" /></p>
+            <div className="mt-5 hidden flex-wrap gap-2 md:flex">
+              <Link href="/join" className="btn btn-accent px-6 text-lg"><T bn="সদস্য হোন" en="Become a member" /></Link>
+              <Link href="/blood" className="btn bg-white text-blood hover:bg-white/90"><T bn="রক্ত খুঁজুন" en="Find blood" /></Link>
+              <Link href="/about" className="btn border border-white/60 text-white hover:bg-white/15"><T bn="আমাদের কথা" en="About us" /></Link>
+            </div>
+            <p className="mt-4 hidden text-sm text-white/90 md:block"><T bn="স্থাপিত" en="Established" /> {ORG_ESTD} • {ORG_PLACE}</p>
           </div>
-          <p className="mt-2 max-w-xl text-white/95"><T bn={ORG_SLOGAN} en="A volunteer, non-political youth organisation devoted to serving humanity" /></p>
-          <div className="mt-4 overflow-hidden rounded-3xl border-4 border-white shadow-[0_10px_30px_rgba(20,60,100,0.3)]">
+          <div className="overflow-hidden rounded-3xl border-4 border-white shadow-[0_18px_44px_rgba(20,60,100,0.35)] md:order-2 md:rotate-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={COVER_SRC ?? ""} alt={`${ORG_NAME} — পথচলার ৫ বছর`} className="aspect-[1080/578] w-full object-cover" />
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 md:hidden">
             <Link href="/join" className="btn btn-accent px-6 text-lg"><T bn="সদস্য হোন" en="Become a member" /></Link>
             <Link href="/blood" className="btn bg-white text-blood hover:bg-white/90"><T bn="রক্ত খুঁজুন" en="Find blood" /></Link>
             <Link href="/about" className="btn border border-white/60 text-white hover:bg-white/15"><T bn="আমাদের কথা" en="About us" /></Link>
+            <p className="mt-1 w-full text-sm text-white/90"><T bn="স্থাপিত" en="Established" /> {ORG_ESTD} • {ORG_PLACE}</p>
           </div>
-          <p className="mt-3 text-sm text-white/90"><T bn="স্থাপিত" en="Established" /> {ORG_ESTD} • {ORG_PLACE}</p>
         </div>
       </section>
 
@@ -93,7 +103,7 @@ export default async function Home() {
               { label: <T bn="কার্যক্রম" en="Activities" />, value: bn(s.events) },
               { label: <T bn="সেবায় ব্যয় (৳)" en="Spent on service (৳)" />, value: bn(Number(s.expense).toLocaleString("en-IN")) },
             ].map((x, i) => (
-              <div key={i} className="rounded-3xl bg-white p-4 text-center shadow-[0_4px_16px_rgba(40,80,120,0.07)]">
+              <div key={i} className="card p-4 text-center">
                 <p className="text-3xl font-bold text-brand">{x.value}</p>
                 <p className="text-sm text-muted">{x.label}</p>
               </div>

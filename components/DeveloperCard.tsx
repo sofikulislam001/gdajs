@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { browserClient, isConfigured } from "@/lib/supabase";
 import { waLink } from "@/lib/bn";
@@ -10,7 +11,7 @@ const Gh = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="currentC
 const Wa = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2a10 10 0 0 0-8.600 15.100L2 22l5-1.300A10 10 0 1 0 12 2zm5.200 14.200c-.2.600-1.300 1.200-1.800 1.200-.5.100-1 .2-3.300-.7-2.800-1.100-4.600-4-4.700-4.200-.1-.2-1.100-1.500-1.100-2.800 0-1.300.7-2 .9-2.300.2-.3.500-.3.700-.3h.5c.2 0 .4 0 .6.500l.8 2c.1.200.1.300 0 .500l-.3.400-.4.400c-.1.200-.3.300-.1.600.2.300.8 1.300 1.700 2.100 1.200 1 2.100 1.300 2.400 1.500.3.100.5.100.6-.1l.8-1c.2-.2.400-.2.600-.1l1.900.9c.3.100.5.200.5.300.1.200.1.800-.1 1.400z" /></svg>);
 const Globe = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.500 2.600 3.800 5.600 3.800 9S14.500 18.400 12 21c-2.500-2.600-3.800-5.600-3.800-9S9.500 5.600 12 3z" /></svg>);
 
-export default function DeveloperCard() {
+export function useDev() {
   const [s, setS] = useState<SiteSettings>(SETTING_DEFAULTS);
 
   useEffect(() => {
@@ -26,22 +27,32 @@ export default function DeveloperCard() {
       });
   }, []);
 
-  const links = [
+  return s;
+}
+
+export function devLinks(s: SiteSettings) {
+  return [
     s.dev_portfolio && { href: s.dev_portfolio, label: "Portfolio", icon: <Globe />, cls: "bg-ink text-white" },
     s.dev_facebook && { href: s.dev_facebook, label: "Facebook", icon: <Fb />, cls: "bg-[#1877f2] text-white" },
     s.dev_github && { href: s.dev_github, label: "GitHub", icon: <Gh />, cls: "bg-[#24292f] text-white" },
     s.dev_whatsapp && { href: waLink(s.dev_whatsapp, "আসসালামু আলাইকুম"), label: "WhatsApp", icon: <Wa />, cls: "bg-[#25d366] text-white" },
   ].filter(Boolean) as { href: string; label: string; icon: React.ReactNode; cls: string }[];
+}
+
+export default function DeveloperCard() {
+  const s = useDev();
+  const links = devLinks(s);
 
   return (
     <section className="mt-6 overflow-hidden rounded-3xl border border-line bg-white shadow-[0_4px_16px_rgba(40,80,120,0.07)]" aria-label="ডেভেলপারের পরিচিতি">
-      <div className="bg-gradient-to-r from-[#1f4f7a] to-brand px-4 py-1.5 text-center text-xs font-semibold tracking-wide text-white/90">DESIGNED &amp; DEVELOPED BY</div>
+      <div className="bg-gradient-to-r from-[#1f4f7a] to-brand px-4 py-1.5 text-center text-xs font-semibold text-white/90">DESIGNED &amp; DEVELOPED BY</div>
       <div className="flex items-center gap-4 p-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/developer.jpg" alt={s.dev_name} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl border-2 border-white object-cover shadow-md ring-2 ring-brand/30" />
         <div className="min-w-0 text-left">
           <p className="truncate text-lg font-bold leading-tight">{s.dev_name}</p>
           <p className="text-sm font-medium text-brand-dark">{s.dev_profession}</p>
+          <Link href="/developer" className="text-xs font-semibold text-brand hover:underline">বিস্তারিত দেখুন →</Link>
         </div>
       </div>
       {links.length > 0 && (

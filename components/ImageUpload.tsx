@@ -55,17 +55,17 @@ export default function ImageUpload({ value, onChange, folder, maxSide = 1600, a
   }
 
   return (
-    <div className={avatar ? "flex items-center gap-4" : "space-y-2"}>
+    <div className={avatar ? "relative z-10 flex flex-col items-center gap-2.5" : "space-y-2"}>
       {avatar ? (
-        <Avatar src={value} name={name} size={88} />
+        <Avatar src={value} name={name} size={104} className="!border-4 shadow-lg ring-1 ring-line" />
       ) : (
         value && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt="নির্বাচিত ছবি" className="aspect-[16/9] w-full rounded-2xl border border-line object-cover" />
         )
       )}
-      <div>
-        <div className="flex flex-wrap gap-2">
+      <div className={avatar ? "text-center" : ""}>
+        <div className={`flex flex-wrap gap-2 ${avatar ? "justify-center" : ""}`}>
           <button type="button" disabled={busy} onClick={() => input.current?.click()} className="btn btn-ghost btn-sm">
             {busy ? "আপলোড হচ্ছে…" : value ? "ছবি বদলান" : "ছবি আপলোড করুন"}
           </button>

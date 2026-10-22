@@ -26,7 +26,7 @@ function Row({ href, title, sub, onClick, external, danger }: { href?: string; t
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="mb-2 px-1 text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
+      <h2 className="mb-2 px-1 text-sm font-bold uppercase text-muted">{title}</h2>
       <div className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-white shadow-[0_4px_16px_rgba(40,80,120,0.06)]">{children}</div>
     </section>
   );
@@ -106,6 +106,7 @@ export default function SettingsPage() {
         <Row href="/privacy" title={tr("প্রাইভেসি পলিসি", "Privacy policy")} sub={tr("আপনার তথ্য কীভাবে ব্যবহার ও সুরক্ষিত হয়", "How your data is used and protected")} />
         <Row href="/about" title={tr("আমাদের সম্পর্কে", "About us")} />
         <Row href="/helpline" title={tr("হেল্পলাইন", "Helpline")} />
+        <Row href="/developer" title={tr("ডেভেলপার", "Developer")} sub={tr("অ্যাপ যিনি বানিয়েছেন", "Who built this app")} />
         <Row href={FB_PAGE_URL} external title={tr("ফেসবুক পেজ", "Facebook page")} />
         <Row onClick={share} title={tr("অ্যাপ শেয়ার করুন", "Share this app")} />
       </Group>

@@ -11,6 +11,7 @@ export type SiteSettings = {
   dev_github: string;
   dev_whatsapp: string;
   dev_portfolio: string;
+  dev_about: string;
 };
 
 export const SETTING_DEFAULTS: SiteSettings = {
@@ -23,7 +24,8 @@ export const SETTING_DEFAULTS: SiteSettings = {
   dev_facebook: "",
   dev_github: "https://github.com/sofikulislam001",
   dev_whatsapp: "",
-  dev_portfolio: "",
+  dev_portfolio: "https://sofikul.vercel.app",
+  dev_about: "",
 };
 
 /** সার্ভার কম্পোনেন্টে সেটিংস পড়া (না পেলে ডিফল্ট) */

@@ -169,6 +169,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <SettingsIcon size={26} />
               {tr("সেটিংস", "Settings")}
             </Link>
+            <Link href="/developer" className="flex items-center gap-4 px-6 py-3 text-lg font-medium hover:bg-sky-soft">
+              <NavIcon name="user" size={26} />
+              {tr("ডেভেলপার", "Developer")}
+            </Link>
             <a href={FB_PAGE_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 px-6 py-3 text-lg font-medium hover:bg-sky-soft">
               <FacebookIcon size={30} />
               {tr("ফেসবুক পেজ", "Facebook page")}
@@ -208,7 +212,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <footer className="hidden border-t border-line bg-white py-6 text-center text-sm text-muted md:block">
         <p className="font-semibold text-ink">{tr(ORG_NAME, "Godnail Alokito Jubo Shakti")}</p>
         <p>{tr(ORG_SLOGAN, "A volunteer, non-political youth organisation devoted to serving humanity")}</p>
-        <p className="mt-1"><Link href="/privacy" className="hover:underline">{tr("প্রাইভেসি পলিসি", "Privacy policy")}</Link> • <Link href="/settings" className="hover:underline">{tr("সেটিংস", "Settings")}</Link></p>
+        <p className="mt-1"><Link href="/privacy" className="hover:underline">{tr("প্রাইভেসি পলিসি", "Privacy policy")}</Link> • <Link href="/settings" className="hover:underline">{tr("সেটিংস", "Settings")}</Link> • <Link href="/developer" className="hover:underline">{tr("ডেভেলপার", "Developer")}</Link></p>
       </footer>
 
       {/* ── নিচের নেভিগেশন (মোবাইল) ── */}

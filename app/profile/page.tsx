@@ -31,7 +31,7 @@ function lastMonths(n: number): string[] {
 function Item({ label, value, wide }: { label: string; value?: string | null; wide?: boolean }) {
   return (
     <div className={`rounded-2xl bg-paper px-4 py-3 ${wide ? "sm:col-span-2" : ""}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="text-xs font-semibold uppercase text-muted">{label}</p>
       <p className="mt-0.5 break-words font-semibold">{value || "—"}</p>
     </div>
   );
@@ -184,8 +184,8 @@ function ProfileInner() {
           <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/70 to-transparent" />
         </div>
-        <div className="-mt-12 flex flex-col items-center gap-1.5 px-4 pb-5 text-center">
-          <div className="rounded-full bg-white p-1 shadow-lg">
+        <div className="relative z-10 -mt-14 flex flex-col items-center gap-1.5 px-4 pb-6 text-center">
+          <div>
             <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
           </div>
           <h1 className="text-2xl">{m.name}</h1>
