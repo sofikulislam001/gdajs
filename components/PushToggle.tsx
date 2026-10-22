@@ -3,15 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/lang";
+import { currentSubscription, enablePush, pushSupported } from "@/lib/push";
 import { browserClient, isConfigured } from "@/lib/supabase";
-
-function b64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
-  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  const out = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-  return out;
-}
 
 type St = "loading" | "unsupported" | "ios-install" | "denied" | "off" | "on";
 
@@ -24,18 +17,13 @@ export default function PushToggle() {
   const [msg, setMsg] = useState("");
 
   const check = useCallback(async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    if (!pushSupported()) {
       const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
       return setSt(ios ? "ios-install" : "unsupported");
     }
     if (Notification.permission === "denied") return setSt("denied");
-    try {
-      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      const sub = await reg?.pushManager.getSubscription();
-      setSt(sub && Notification.permission === "granted" ? "on" : "off");
-    } catch {
-      setSt("off");
-    }
+    const sub = await currentSubscription();
+    setSt(sub && Notification.permission === "granted" ? "on" : "off");
   }, []);
 
   useEffect(() => {
@@ -45,32 +33,13 @@ export default function PushToggle() {
   async function enable() {
     setMsg("");
     setBusy(true);
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        setSt(perm === "denied" ? "denied" : "off");
-        return;
-      }
-      const sb = browserClient();
-      const { data: key } = await sb.rpc("get_push_public_key");
-      if (!key) throw new Error("no key");
-      const reg = (await navigator.serviceWorker.getRegistration("/sw.js")) ?? (await navigator.serviceWorker.register("/sw.js"));
-      await navigator.serviceWorker.ready;
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(String(key)) });
-      const j = sub.toJSON();
-      const { error } = await sb.from("push_subscriptions").upsert(
-        { user_id: user!.id, endpoint: sub.endpoint, p256dh: j.keys?.p256dh ?? "", auth: j.keys?.auth ?? "" },
-        { onConflict: "endpoint" },
-      );
-      if (error) throw error;
+    const r = await enablePush(user!.id);
+    setBusy(false);
+    if (r === "ok") {
       setSt("on");
       setMsg(tr("চালু হয়েছে। এখন থেকে নোটিফিকেশন ফোনে আসবে।", "Enabled. Notifications will now reach this device."));
-    } catch {
-      setMsg(tr("চালু করা যায়নি। ইনস্টল করা অ্যাপ বা আপডেটেড ব্রাউজার থেকে আবার চেষ্টা করুন।", "Could not enable. Try again from the installed app or an up-to-date browser."));
-    } finally {
-      setBusy(false);
-    }
+    } else if (r === "denied") setSt("denied");
+    else setMsg(tr("চালু করা যায়নি। ইনস্টল করা অ্যাপ বা আপডেটেড ব্রাউজার থেকে আবার চেষ্টা করুন।", "Could not enable. Try again from the installed app or an up-to-date browser."));
   }
 
   async function disable() {

@@ -15,15 +15,14 @@ export default function InstallApp() {
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     setInstalled(standalone);
     setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
-    const h = (e: Event) => {
-      e.preventDefault();
-      setEv(e as BIPEvent);
-    };
+    const w = window as Window & { __bip?: BIPEvent };
+    if (w.__bip) setEv(w.__bip);
+    const h = () => setEv(w.__bip ?? null);
     const done = () => setInstalled(true);
-    window.addEventListener("beforeinstallprompt", h);
+    window.addEventListener("bip-ready", h);
     window.addEventListener("appinstalled", done);
     return () => {
-      window.removeEventListener("beforeinstallprompt", h);
+      window.removeEventListener("bip-ready", h);
       window.removeEventListener("appinstalled", done);
     };
   }, []);
@@ -35,6 +34,7 @@ export default function InstallApp() {
   async function install() {
     if (!ev) return;
     await ev.prompt();
+    (window as Window & { __bip?: BIPEvent }).__bip = undefined;
     setEv(null);
   }
 

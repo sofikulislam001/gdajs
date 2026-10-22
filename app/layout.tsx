@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LangProvider } from "@/lib/lang";
 import AppShell from "@/components/AppShell";
+import AppPrompts from "@/components/AppPrompts";
 import PwaRegister from "@/components/PwaRegister";
 import { ORG_NAME, ORG_SLOGAN } from "@/lib/bn";
 
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <LangProvider><AppShell>{children}</AppShell></LangProvider>
+        <LangProvider><AppShell>{children}</AppShell><AppPrompts /></LangProvider>
         <PwaRegister />
       </body>
     </html>
