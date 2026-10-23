@@ -82,16 +82,19 @@ export default function BloodRequests() {
 
       {rows.length > 0 && (
         <div className="space-y-2">
-          <p className="font-bold">{tr("চলমান জরুরি অনুরোধ", "Open urgent requests")}</p>
+          <p className="pt-1 text-lg font-bold">{tr("চলমান জরুরি অনুরোধ", "Open urgent requests")}</p>
           {rows.map((r) => (
-            <div key={r.id} className="card flex items-center gap-3 border-blood/30">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blood text-xl font-extrabold text-white">{r.blood_group}</div>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">{r.area}{r.hospital ? ` • ${r.hospital}` : ""}</p>
-                <p className="text-sm text-muted">{[r.patient_name, r.needed_on ? `${tr("প্রয়োজন", "Needed")}: ${fmtDate(r.needed_on)}` : null].filter(Boolean).join(" • ")}</p>
-                {r.note && <p className="text-sm">{r.note}</p>}
+            <div key={r.id} className="card space-y-3 border-blood/30">
+              <div className="flex items-start gap-3">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blood text-xl font-extrabold text-white">{r.blood_group}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold leading-snug">{r.area}</p>
+                  {r.hospital && <p className="text-sm leading-snug">🏥 {r.hospital}</p>}
+                  <p className="text-sm text-muted">{[r.patient_name ? `${tr("রোগী", "Patient")}: ${r.patient_name}` : null, r.needed_on ? `${tr("প্রয়োজন", "Needed")}: ${fmtDate(r.needed_on)}` : null].filter(Boolean).join(" • ")}</p>
+                </div>
               </div>
-              <a href={`tel:${r.phone}`} className="btn btn-primary btn-sm shrink-0">{tr("কল করুন", "Call")}</a>
+              {r.note && <p className="rounded-2xl bg-paper px-3 py-2 text-sm">{r.note}</p>}
+              <a href={`tel:${r.phone}`} className="btn btn-primary w-full">📞 {tr("কল করুন", "Call")}</a>
             </div>
           ))}
         </div>

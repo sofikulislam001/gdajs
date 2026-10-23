@@ -90,7 +90,8 @@ img { max-width: 100%; }
 @media (display-mode: standalone) {
   html, body { overscroll-behavior-y: none; }
   html { touch-action: pan-x pan-y; }
-  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; padding-top: env(safe-area-inset-top); }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  header.sticky { padding-top: env(safe-area-inset-top); }
   input, textarea, select, .select-all, [contenteditable] { -webkit-user-select: text; user-select: text; }
   img { -webkit-user-drag: none; }
 }

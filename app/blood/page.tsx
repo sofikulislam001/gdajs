@@ -44,15 +44,15 @@ export default function BloodPage() {
   return (
     <div>
       <BloodRequests />
-      <h1 className="mb-1 text-3xl">রক্তদাতা তালিকা</h1>
+      <h1 className="mb-1 mt-2 text-3xl">রক্তদাতা তালিকা</h1>
       <p className="mb-5 text-muted">
-        রক্তের প্রয়োজনে গ্রুপ বেছে নিন। শেষ রক্তদানের ৪ মাস পার হলে দাতাকে &ldquo;প্রস্তুত&rdquo; দেখানো হয়।
+        রক্তের প্রয়োজনে গ্রুপ বেছে নিন। শেষ রক্তদানের ৩ মাস (৯০ দিন) পার হলে দাতাকে &ldquo;প্রস্তুত&rdquo; দেখানো হয়।
       </p>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <button onClick={() => setGroup("")} className={`btn btn-sm ${group === "" ? "btn-primary" : "btn-ghost"}`}>সব গ্রুপ</button>
+      <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button onClick={() => setGroup("")} className={`btn btn-sm shrink-0 ${group === "" ? "btn-primary" : "btn-ghost"}`}>সব গ্রুপ</button>
         {BLOOD_GROUPS.map((g) => (
-          <button key={g} onClick={() => setGroup(g)} className={`btn btn-sm ${group === g ? "btn-primary" : "btn-ghost"}`}>{g}</button>
+          <button key={g} onClick={() => setGroup(g)} className={`btn btn-sm shrink-0 ${group === g ? "btn-primary" : "btn-ghost"}`}>{g}</button>
         ))}
       </div>
 
