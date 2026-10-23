@@ -73,6 +73,7 @@ function ProfileInner() {
   const [msg, setMsg] = useState("");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [pw, setPw] = useState("");
   const [payNote, setPayNote] = useState("");
   const [tab, setTab] = useState<Tab>(() => {
@@ -224,19 +225,18 @@ function ProfileInner() {
       )}
 
       <section className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_6px_24px_rgba(40,80,120,0.1)]">
-        <div className="relative h-32 sm:h-44">
+        <div className="relative aspect-[1080/578] w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover object-[50%_88%]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/75 via-[#12324f]/20 to-transparent" />
-          <span className={`badge absolute right-3 top-3 shadow ${statusBadge.c}`}>{statusBadge.t}</span>
+          <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="relative z-10 -mt-14 flex flex-col items-center gap-1.5 px-4 pb-5 text-center">
+        <div className="flex flex-col items-center gap-1.5 px-4 pb-5 pt-4 text-center">
           <div>
             <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
           </div>
           <h1 className="text-2xl">{m.name}</h1>
           <p className="text-sm text-muted">{memberNo(m)} • {bn(m.phone)}</p>
           <div className="mt-1 flex flex-wrap justify-center gap-1.5 text-xs">
+            <span className={`badge ${statusBadge.c}`}>{statusBadge.t}</span>
             {m.blood_group && <span className="badge bg-blood/10 font-bold text-blood">🩸 {m.blood_group}</span>}
             {m.profession && <span className="badge bg-paper text-muted">{m.profession}</span>}
             <span className="badge bg-paper text-muted">{tr("যোগদান", "Joined")} {fmtDate(m.joined_on)}</span>
@@ -279,6 +279,15 @@ function ProfileInner() {
             <h2 className="text-xl">{tr("আমার তথ্য", "My details")}</h2>
             <button onClick={() => setEditing(true)} className="btn btn-ghost btn-sm">{tr("সম্পাদনা", "Edit")}</button>
           </div>
+          <button onClick={() => setShowInfo((v) => !v)} aria-expanded={showInfo} className="flex w-full items-center gap-3 rounded-2xl bg-brand-soft px-4 py-3.5 text-left transition active:scale-[0.99]">
+            <span className="text-xl" aria-hidden>👤</span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold text-brand-dark">{tr("ব্যক্তিগত তথ্য", "Personal information")}</span>
+              <span className="block text-xs text-muted">{showInfo ? tr("লুকাতে চাপ দিন", "Tap to hide") : tr("সব তথ্য দেখতে চাপ দিন", "Tap to see all details")}</span>
+            </span>
+            <span className={`text-lg text-brand transition-transform ${showInfo ? "rotate-180" : ""}`} aria-hidden>▾</span>
+          </button>
+          {showInfo && <div className="space-y-5">
           <div>
             <p className="mb-2 text-sm font-bold text-brand-dark">{tr("ব্যক্তিগত", "Personal")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -312,6 +321,7 @@ function ProfileInner() {
               <p className="whitespace-pre-line rounded-2xl bg-paper px-4 py-3">{m.about}</p>
             </div>
           )}
+          </div>}
         </section>
       )}
 
