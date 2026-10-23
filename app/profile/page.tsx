@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import ImageUpload from "@/components/ImageUpload";
 import MembershipCard, { memberNo } from "@/components/MembershipCard";
 import PayForm from "@/components/PayForm";
+import PushToggle from "@/components/PushToggle";
 import SetupNotice from "@/components/SetupNotice";
 import { ListSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/lib/auth";
@@ -14,9 +15,9 @@ import { COVER_SRC } from "@/lib/brand";
 import { dueFor } from "@/lib/dues";
 import { useLang } from "@/lib/lang";
 import { browserClient, isConfigured } from "@/lib/supabase";
-import type { Member, Payment } from "@/lib/types";
+import type { EventRow, Member, Payment } from "@/lib/types";
 
-type Tab = "info" | "chada" | "card" | "security";
+type Tab = "info" | "chada" | "activity" | "card" | "security";
 
 function lastMonths(n: number): string[] {
   const out: string[] = [];
@@ -74,12 +75,14 @@ function ProfileInner() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [attended, setAttended] = useState<EventRow[]>([]);
+  const [copied, setCopied] = useState(false);
   const [pw, setPw] = useState("");
   const [payNote, setPayNote] = useState("");
   const [tab, setTab] = useState<Tab>(() => {
     const t = params.get("tab");
     if (t === "dues") return "chada";
-    return t === "chada" || t === "card" || t === "security" ? t : "info";
+    return t === "chada" || t === "activity" || t === "card" || t === "security" ? t : "info";
   });
 
   const load = useCallback(async () => {
@@ -90,6 +93,12 @@ function ProfileInner() {
     ]);
     setMember((m.data as Member | null) ?? null);
     setPayments((p.data as Payment[]) ?? []);
+    const a = await sb.from("event_attendance").select("event_id");
+    const ids = ((a.data as { event_id: string }[] | null) ?? []).map((x) => x.event_id);
+    if (ids.length) {
+      const ev = await sb.from("events").select("*").in("id", ids).order("event_date", { ascending: false });
+      setAttended((ev.data as EventRow[]) ?? []);
+    } else setAttended([]);
   }, []);
 
   useEffect(() => {
@@ -159,6 +168,28 @@ function ProfileInner() {
   ];
   const pct = Math.round((checks.filter(([, ok]) => ok).length / checks.length) * 100);
   const missing = checks.filter(([, ok]) => !ok).map(([l]) => l);
+  const year = String(new Date().getFullYear());
+  const monthsThisYear = Number(key.slice(5, 7));
+  const startMonth = joinKey.startsWith(year) ? Number(joinKey.slice(5, 7)) : 1;
+  const expected = Math.max(1, monthsThisYear - startMonth + 1);
+  const paidThisYear = payments.filter((p) => p.month.startsWith(year)).length;
+  const yearPct = Math.min(100, Math.round((paidThisYear / expected) * 100));
+  const totalPaid = payments.reduce((a, p) => a + p.amount, 0);
+
+  async function copyId() {
+    try {
+      await navigator.clipboard.writeText(memberNo(m));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  }
+  async function shareProfile() {
+    const text = `${m.name} — ${memberNo(m)}\n${tr("গোদনাইল আলোকিত যুব শক্তি", "Godnail Alokito Jubo Shakti")}`;
+    try {
+      if (navigator.share) await navigator.share({ title: m.name, text, url: location.origin });
+      else await copyId();
+    } catch {}
+  }
 
   async function setPhoto(url: string) {
     const { error } = await browserClient().from("members").update({ photo_url: url || null }).eq("id", m.id);
@@ -211,6 +242,7 @@ function ProfileInner() {
   const tabs: [Tab, string][] = [
     ["info", `👤 ${tr("তথ্য", "Details")}`],
     ["chada", `💳 ${tr("চাঁদা", "Dues")}`],
+    ["activity", `📅 ${tr("কার্যক্রম", "Activity")}`],
     ["card", `🧾 ${tr("রসিদ", "Receipt")}`],
     ["security", `🔒 ${tr("নিরাপত্তা", "Security")}`],
   ];
@@ -234,7 +266,7 @@ function ProfileInner() {
             <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
           </div>
           <h1 className="text-2xl">{m.name}</h1>
-          <p className="text-sm text-muted">{memberNo(m)} • {bn(m.phone)}</p>
+          <button onClick={copyId} className="rounded-full px-3 py-1 text-sm text-muted transition hover:bg-paper active:scale-95" title={tr("আইডি কপি করুন", "Copy ID")}>{memberNo(m)} • {bn(m.phone)} <span aria-hidden>{copied ? "✓" : "⧉"}</span></button>
           <div className="mt-1 flex flex-wrap justify-center gap-1.5 text-xs">
             <span className={`badge ${statusBadge.c}`}>{statusBadge.t}</span>
             {m.blood_group && <span className="badge bg-blood/10 font-bold text-blood">🩸 {m.blood_group}</span>}
@@ -263,10 +295,26 @@ function ProfileInner() {
         </section>
       )}
 
+      {m.status === "active" && (
+        <section className="grid grid-cols-4 gap-2">
+          {([
+            ["💳", tr("চাঁদা দিন", "Pay dues"), () => { setTab("chada"); setMsg(""); }],
+            ["🧾", tr("রসিদ", "Receipt"), () => { setTab("card"); setMsg(""); }],
+            ["📤", tr("শেয়ার", "Share"), shareProfile],
+            ["⚙️", tr("সেটিংস", "Settings"), () => router.push("/settings")],
+          ] as [string, string, () => void][]).map(([ic, l, fn]) => (
+            <button key={l} onClick={fn} className="flex min-w-0 flex-col items-center gap-1 rounded-2xl bg-white px-1 py-3 shadow-sm ring-1 ring-line transition active:scale-95">
+              <span className="text-xl" aria-hidden>{ic}</span>
+              <span className="w-full truncate text-xs font-semibold">{l}</span>
+            </button>
+          ))}
+        </section>
+      )}
+
       <div className="sticky top-[4.25rem] z-20 -mx-1 bg-paper/95 px-1 py-1 backdrop-blur">
-        <div className="grid grid-cols-4 gap-1 rounded-2xl bg-white p-1 shadow-sm ring-1 ring-line">
+        <div className="grid grid-cols-5 gap-1 rounded-2xl bg-white p-1 shadow-sm ring-1 ring-line">
           {tabs.map(([k, l]) => (
-            <button key={k} onClick={() => { setTab(k); setMsg(""); }} className={`min-w-0 truncate rounded-xl px-1 py-2.5 text-[13px] font-semibold transition ${tab === k ? "bg-brand text-white shadow" : "text-muted hover:bg-brand-soft"}`}>{l}</button>
+            <button key={k} onClick={() => { setTab(k); setMsg(""); }} className={`min-w-0 truncate rounded-xl px-1 py-2.5 text-[12px] font-semibold transition ${tab === k ? "bg-brand text-white shadow" : "text-muted hover:bg-brand-soft"}`}>{l}</button>
           ))}
         </div>
       </div>
@@ -383,6 +431,14 @@ function ProfileInner() {
             ) : (
               payNote && <p className="rounded-2xl bg-paper p-3 text-sm">{payNote}</p>
             )}
+            <div className="rounded-2xl bg-paper p-3">
+              <div className="mb-1.5 flex items-center justify-between text-sm">
+                <span className="font-semibold">{bn(year)} {tr("সালের নিয়মিততা", "consistency")}</span>
+                <span className="font-bold text-brand-dark">{bn(paidThisYear)}/{bn(expected)}</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-gradient-to-r from-brand to-[#6aa8d8] transition-all" style={{ width: `${yearPct}%` }} /></div>
+              <p className="mt-1.5 text-xs text-muted">{tr("মোট পরিশোধ", "Total paid")}: <b className="text-ink">{taka(totalPaid)}</b></p>
+            </div>
             <PayForm m={m} payments={payments} />
             <div>
               <p className="label">{tr("গত ১২ মাস", "Last 12 months")}</p>
@@ -401,6 +457,31 @@ function ProfileInner() {
           </section>
         ))}
 
+      {tab === "activity" && (
+        <section className="card space-y-4">
+          <h2 className="text-xl">{tr("আমার কার্যক্রম", "My activity")}</h2>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-2xl bg-brand-soft p-3"><p className="text-2xl font-bold text-brand">{bn(attended.length)}</p><p className="text-xs text-muted">{tr("অনুষ্ঠানে অংশ", "Events joined")}</p></div>
+            <div className="rounded-2xl bg-accent-soft p-3"><p className="text-2xl font-bold">{bn(payments.length)}</p><p className="text-xs text-muted">{tr("চাঁদা দিয়েছেন", "Payments made")}</p></div>
+            <div className="rounded-2xl bg-blood/10 p-3"><p className="text-2xl font-bold text-blood">{m.last_blood_donation ? "✓" : "—"}</p><p className="text-xs text-muted">{tr("রক্তদান", "Blood donor")}</p></div>
+          </div>
+          {attended.length === 0 ? (
+            <p className="rounded-2xl bg-paper p-4 text-center text-sm text-muted">{tr("এখনো কোনো অনুষ্ঠানে উপস্থিতি নথিভুক্ত হয়নি। সংগঠনের কর্মসূচিতে অংশ নিলে এখানে জমা হবে।", "No attendance recorded yet. Events you join will appear here.")}</p>
+          ) : (
+            <ol className="relative space-y-3 border-l-2 border-brand-soft pl-4">
+              {attended.map((e) => (
+                <li key={e.id} className="relative">
+                  <span className="absolute -left-[22px] top-1.5 h-3 w-3 rounded-full bg-brand ring-4 ring-white" />
+                  <p className="font-semibold">{e.title}</p>
+                  <p className="text-xs text-muted">{fmtDate(e.event_date)}{e.location ? ` • ${e.location}` : ""}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+          <Link href="/events" className="btn btn-ghost w-full">{tr("সব কার্যক্রম দেখুন", "See all activities")}</Link>
+        </section>
+      )}
+
       {tab === "card" &&
         (m.status !== "active" ? (
           <p className="card text-center text-muted">{tr("সদস্যপদ অনুমোদনের পর এখানে আপনার সদস্যপদ রসিদ পাবেন, যা ডাউনলোড করা যাবে।", "After approval your membership receipt will appear here and can be downloaded.")}</p>
@@ -415,6 +496,7 @@ function ProfileInner() {
             <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={tr("নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)", "New password (at least 6 characters)")} autoComplete="new-password" className="input" />
             <button className="btn btn-primary">{tr("পাসওয়ার্ড বদলান", "Change password")}</button>
           </form>
+          <PushToggle />
           <div className="card space-y-2">
             <Link href="/settings" className="btn btn-ghost w-full">{tr("ভাষা ও অন্যান্য সেটিংস", "Language & other settings")}</Link>
             <button onClick={logout} className="btn btn-danger w-full">{tr("লগআউট", "Logout")}</button>
