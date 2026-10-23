@@ -29,6 +29,31 @@ function lastMonths(n: number): string[] {
   return out;
 }
 
+function daysSince(iso: string): number {
+  return Math.floor((new Date().getTime() - new Date(`${iso.slice(0, 10)}T00:00:00`).getTime()) / 86400000);
+}
+
+function Ring({ pct }: { pct: number }) {
+  const r = 26, c = 2 * Math.PI * r;
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" className="shrink-0" aria-hidden>
+      <circle cx="32" cy="32" r={r} fill="none" stroke="#e3edf6" strokeWidth="7" />
+      <circle cx="32" cy="32" r={r} fill="none" stroke="#3f86bd" strokeWidth="7" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} transform="rotate(-90 32 32)" />
+      <text x="32" y="37" textAnchor="middle" fontSize="15" fontWeight="700" fill="#12324f">{pct}</text>
+    </svg>
+  );
+}
+
+function Stat({ icon, value, label, tone }: { icon: string; value: string; label: string; tone: string }) {
+  return (
+    <div className={`min-w-0 rounded-2xl p-3 text-center ${tone}`}>
+      <p className="text-lg leading-none" aria-hidden>{icon}</p>
+      <p className="mt-1.5 truncate text-lg font-bold leading-tight">{value}</p>
+      <p className="text-xs text-muted">{label}</p>
+    </div>
+  );
+}
+
 function Item({ label, value, wide }: { label: string; value?: string | null; wide?: boolean }) {
   return (
     <div className={`rounded-2xl bg-paper px-4 py-3 ${wide ? "sm:col-span-2" : ""}`}>
@@ -116,6 +141,23 @@ function ProfileInner() {
   const due = dueFor(m, payments, key);
   const paidSet = new Set(payments.map((p) => p.month.slice(0, 7)));
   const joinKey = m.joined_on.slice(0, 7);
+  const days = Math.max(0, daysSince(m.joined_on));
+  const tenure = days >= 365 ? `${bn(Math.floor(days / 365))} ${tr("বছর", "yr")}` : days >= 30 ? `${bn(Math.floor(days / 30))} ${tr("মাস", "mo")}` : `${bn(days)} ${tr("দিন", "d")}`;
+  const gap = m.last_blood_donation ? 90 - daysSince(m.last_blood_donation) : 0;
+  const canDonate = !!m.blood_group && gap <= 0;
+  const checks: [string, boolean][] = [
+    [tr("ছবি", "Photo"), !!m.photo_url],
+    [tr("পিতার নাম", "Father's name"), !!m.father_name],
+    [tr("জন্মতারিখ", "Date of birth"), !!m.dob],
+    [tr("ঠিকানা", "Address"), !!m.address],
+    [tr("পেশা", "Profession"), !!m.profession],
+    [tr("শিক্ষা", "Education"), !!m.education],
+    [tr("ইমেইল", "Email"), !!m.email],
+    [tr("রক্তের গ্রুপ", "Blood group"), !!m.blood_group],
+    [tr("আমার সম্পর্কে", "About me"), !!m.about],
+  ];
+  const pct = Math.round((checks.filter(([, ok]) => ok).length / checks.length) * 100);
+  const missing = checks.filter(([, ok]) => !ok).map(([l]) => l);
 
   async function setPhoto(url: string) {
     const { error } = await browserClient().from("members").update({ photo_url: url || null }).eq("id", m.id);
@@ -166,10 +208,10 @@ function ProfileInner() {
     : { t: tr("নিষ্ক্রিয়", "Inactive"), c: "bg-line text-muted" };
 
   const tabs: [Tab, string][] = [
-    ["info", tr("তথ্য", "Details")],
-    ["chada", tr("চাঁদা", "Dues")],
-    ["card", tr("রসিদ", "Receipt")],
-    ["security", tr("নিরাপত্তা", "Security")],
+    ["info", `👤 ${tr("তথ্য", "Details")}`],
+    ["chada", `💳 ${tr("চাঁদা", "Dues")}`],
+    ["card", `🧾 ${tr("রসিদ", "Receipt")}`],
+    ["security", `🔒 ${tr("নিরাপত্তা", "Security")}`],
   ];
 
   return (
@@ -182,26 +224,49 @@ function ProfileInner() {
       )}
 
       <section className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_6px_24px_rgba(40,80,120,0.1)]">
-        <div className="relative h-28 sm:h-40">
+        <div className="relative h-32 sm:h-44">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={COVER_SRC ?? "/photos/cover.jpg"} alt="" className="h-full w-full object-cover object-[50%_88%]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#12324f]/75 via-[#12324f]/20 to-transparent" />
+          <span className={`badge absolute right-3 top-3 shadow ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
-        <div className="relative z-10 -mt-14 flex flex-col items-center gap-1.5 px-4 pb-6 text-center">
+        <div className="relative z-10 -mt-14 flex flex-col items-center gap-1.5 px-4 pb-5 text-center">
           <div>
             <ImageUpload avatar name={m.name} value={m.photo_url ?? ""} onChange={setPhoto} folder={`avatars/${user.id}`} maxSide={640} />
           </div>
           <h1 className="text-2xl">{m.name}</h1>
           <p className="text-sm text-muted">{memberNo(m)} • {bn(m.phone)}</p>
-          <span className={`badge ${statusBadge.c}`}>{statusBadge.t}</span>
+          <div className="mt-1 flex flex-wrap justify-center gap-1.5 text-xs">
+            {m.blood_group && <span className="badge bg-blood/10 font-bold text-blood">🩸 {m.blood_group}</span>}
+            {m.profession && <span className="badge bg-paper text-muted">{m.profession}</span>}
+            <span className="badge bg-paper text-muted">{tr("যোগদান", "Joined")} {fmtDate(m.joined_on)}</span>
+          </div>
           {m.status === "pending" && <p className="max-w-md text-sm text-muted">{tr("আপনার আবেদন যাচাইয়ের অপেক্ষায় আছে। অনুমোদন হলে এখানে চাঁদার হিসাব ও রসিদ পাবেন।", "Your application is being reviewed. Once approved you will see dues and your receipt here.")}</p>}
         </div>
+        {m.status === "active" && (
+          <div className="grid grid-cols-3 gap-2 border-t border-line bg-paper/60 p-3">
+            <Stat icon="🗓️" value={tenure} label={tr("সংগঠনে", "With us")} tone="bg-white" />
+            <Stat icon={due.due === 0 ? "✅" : "⏳"} value={due.due === 0 ? tr("পরিশোধিত", "Paid up") : `${bn(due.due)} ${tr("মাস বাকি", "mo due")}`} label={tr("চাঁদা", "Dues")} tone={due.due === 0 ? "bg-brand-soft" : "bg-accent-soft"} />
+            <Stat icon="🩸" value={!m.blood_group ? tr("অজানা", "Unknown") : canDonate ? tr("প্রস্তুত", "Ready") : `${bn(gap)} ${tr("দিন", "d")}`} label={tr("রক্তদান", "Donation")} tone={canDonate ? "bg-brand-soft" : "bg-white"} />
+          </div>
+        )}
       </section>
+
+      {pct < 100 && (
+        <section className="card flex items-center gap-4">
+          <Ring pct={pct} />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold">{tr("প্রোফাইল", "Profile")} {bn(pct)}% {tr("সম্পূর্ণ", "complete")}</p>
+            <p className="truncate text-sm text-muted">{tr("বাকি:", "Missing:")} {missing.slice(0, 3).join(", ")}{missing.length > 3 ? ` +${bn(missing.length - 3)}` : ""}</p>
+          </div>
+          <button onClick={() => { setTab("info"); setEditing(true); setMsg(""); }} className="btn btn-primary btn-sm shrink-0">{tr("পূরণ করুন", "Complete")}</button>
+        </section>
+      )}
 
       <div className="sticky top-[4.25rem] z-20 -mx-1 bg-paper/95 px-1 py-1 backdrop-blur">
         <div className="grid grid-cols-4 gap-1 rounded-2xl bg-white p-1 shadow-sm ring-1 ring-line">
           {tabs.map(([k, l]) => (
-            <button key={k} onClick={() => { setTab(k); setMsg(""); }} className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === k ? "bg-brand text-white shadow" : "text-muted hover:bg-brand-soft"}`}>{l}</button>
+            <button key={k} onClick={() => { setTab(k); setMsg(""); }} className={`min-w-0 truncate rounded-xl px-1 py-2.5 text-[13px] font-semibold transition ${tab === k ? "bg-brand text-white shadow" : "text-muted hover:bg-brand-soft"}`}>{l}</button>
           ))}
         </div>
       </div>
@@ -237,6 +302,7 @@ function ProfileInner() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Item label={tr("রক্তের গ্রুপ", "Blood group")} value={m.blood_group} />
               <Item label={tr("শেষ রক্তদান", "Last donation")} value={m.last_blood_donation ? fmtDate(m.last_blood_donation) : null} />
+              {m.blood_group && <Item wide label={tr("পরবর্তী রক্তদান", "Next donation")} value={canDonate ? tr("এখন রক্ত দিতে পারবেন", "Eligible now") : tr(`আরও ${bn(gap)} দিন পর`, `In ${gap} days`)} />}
               <Item wide label={tr("রক্তদাতা তালিকায়", "In donor list")} value={m.show_in_blood_list ? tr("হ্যাঁ, দেখানো হবে", "Yes, visible") : tr("না, লুকানো", "No, hidden")} />
             </div>
           </div>
