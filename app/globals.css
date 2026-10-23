@@ -95,3 +95,5 @@ img { max-width: 100%; }
   input, textarea, select, .select-all, [contenteditable] { -webkit-user-select: text; user-select: text; }
   img { -webkit-user-drag: none; }
 }
+
+html,body{overflow-x:clip}

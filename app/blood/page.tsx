@@ -49,7 +49,7 @@ export default function BloodPage() {
         রক্তের প্রয়োজনে গ্রুপ বেছে নিন। শেষ রক্তদানের ৩ মাস (৯০ দিন) পার হলে দাতাকে &ldquo;প্রস্তুত&rdquo; দেখানো হয়।
       </p>
 
-      <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-4 mb-6 flex max-w-[100vw] gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button onClick={() => setGroup("")} className={`btn btn-sm shrink-0 ${group === "" ? "btn-primary" : "btn-ghost"}`}>সব গ্রুপ</button>
         {BLOOD_GROUPS.map((g) => (
           <button key={g} onClick={() => setGroup(g)} className={`btn btn-sm shrink-0 ${group === g ? "btn-primary" : "btn-ghost"}`}>{g}</button>
@@ -60,9 +60,9 @@ export default function BloodPage() {
       {donors === null && !error && <ListSkeleton />}
       {donors?.length === 0 && <p className="text-muted">এই গ্রুপের কোনো দাতা এখনো তালিকায় নেই।</p>}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
         {donors?.map((d) => (
-          <div key={d.phone} className="card flex items-center gap-4">
+          <div key={d.phone} className="card flex min-w-0 items-center gap-3">
             <div className="relative shrink-0">
               <Avatar src={d.photo_url} name={d.name} size={60} />
               <span className="absolute -bottom-1 -right-1 rounded-full bg-blood px-1.5 py-0.5 text-xs font-bold text-white shadow">{d.blood_group}</span>
@@ -70,13 +70,13 @@ export default function BloodPage() {
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{d.name}</p>
               {d.address && <p className="truncate text-sm text-muted">{d.address}</p>}
-              <p className="text-sm">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                 {d.available ? (
                   <span className="badge bg-brand-soft text-brand-dark">প্রস্তুত</span>
                 ) : (
                   <span className="badge bg-accent-soft text-[#8a5a00]">সম্প্রতি রক্ত দিয়েছেন</span>
                 )}
-                {d.last_blood_donation && <span className="ml-2 text-muted">শেষ: {fmtDate(d.last_blood_donation)}</span>}
+                {d.last_blood_donation && <span className="text-muted">শেষ: {fmtDate(d.last_blood_donation)}</span>}
               </p>
             </div>
             <a href={`tel:${d.phone}`} className="btn btn-primary btn-sm shrink-0">কল</a>
