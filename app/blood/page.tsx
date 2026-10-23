@@ -24,6 +24,11 @@ export default function BloodPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const g = new URLSearchParams(window.location.search).get("group");
+    if (g && (BLOOD_GROUPS as readonly string[]).includes(g)) setGroup(g);
+  }, []);
+
+  useEffect(() => {
     if (!isConfigured) return;
     let cancelled = false;
     setDonors(null);
